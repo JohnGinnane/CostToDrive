@@ -2,14 +2,50 @@
 <html>
   <head>
     <title><%= title %></title>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> -->
+    <script language="javascript" src="js/bootstrap.bundle.min.js"></script>
 
+
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
-  <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-    <p>Hello :-)</p>
+  <body id="ctd-body">
+    <div class="container-fluid h-100">
+        <div class="row d-flex justify-content-center align-items-center">
+            <!-- Make -->
+            <div class="justify-content-center h-100 col-8 row m-1">
+                <div class="col-2 my-auto p-0">
+                    <p class="text-end h4 my-auto">Make:</p>
+                </div>
+
+                <div class="col-6">
+                    <select class="form-select" aria-label="Default select example">
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+                </div> 
+            </div>
+
+            <!-- Model -->
+            <div class="justify-content-center h-100 col-8 row m-1">
+                <div class="col-2 my-auto p-0">
+                    <p class="text-end h4 my-auto">Model:</p>
+                </div>
+
+                <div class="col-6">
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Open this select menu</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+                </div> 
+            </div>
+
+        </div>
+    </div>
   </body>
 </html>

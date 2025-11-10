@@ -33,7 +33,8 @@ const db = new sqlite3.Database("costtodrive.db");
 
 db.serialize(() => {
     db.each("SELECT [ID], [Name] FROM [Makes] AS [MAK]", (err, row) => {
-        console.log(`${row.ID} - ${row.Name}`);
+        //console.log(`${row.ID} - ${row.Name}`);
+        console.log(row);
     });
 })
 

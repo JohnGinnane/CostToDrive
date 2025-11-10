@@ -4,11 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-// SQLite server
-const sqlite3 = require("sqlite3").verbose()
-
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var db = require("./db");
 
 var app = express();
 
@@ -27,16 +25,6 @@ app.use('/users', usersRouter);
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
-
-// Load the database
-const db = new sqlite3.Database("costtodrive.db");
-
-db.serialize(() => {
-    db.each("SELECT [ID], [Name] FROM [Makes] AS [MAK]", (err, row) => {
-        //console.log(`${row.ID} - ${row.Name}`);
-        console.log(row);
-    });
-})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

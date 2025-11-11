@@ -43,3 +43,41 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
+// WEB SOCKET
+const ws             = require("ws");
+//const uuid           = require("uuid");
+const https          = require("https");
+const selfsigned     = require("selfsigned");
+
+// Create self signed cert for use by HTTPS
+const SSLCert =  selfsigned.generate(null, { days: 1 });
+const credential = {
+    key: SSLCert.private,
+    cert: SSLCert.cert
+}
+
+// Start HTTPS server for secure web sockets
+const httpsServer = https.createServer(credential);
+
+httpsServer.on('error', (err) => { console.error(err) });
+httpsServer.listen(3001, () =>  { log('HTTPS running on port 3001') });
+
+const webSocket = new ws.Server({ server: httpsServer });
+
+webSocket.on("connection", function connection(ws) {
+    console.log("new ws client");
+
+    ws.on("message", function message(req) {
+        console.log("hello");
+    })
+
+    ws.on("close", (code, reason) => {
+
+    })
+});

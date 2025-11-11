@@ -10,7 +10,7 @@ webSocket.onopen = (event) => {
 }
 
 function requestMakes() {
-    var req = {
+    let req = {
         action: "requestMakes"
     }
 
@@ -18,17 +18,59 @@ function requestMakes() {
 }
 
 function requestModels(makeID) {
+    let req = {
+        action: "requestModels",
+        id:     makeID
+    }
 
+    webSocket.send(JSON.stringify(req));
+}
+
+function addNewMake(makeID, name) {
+    let selectMake = document.getElementById("select-make");
+    let newOption = document.createElement("option");
+    newOption.value = makeID;
+    newOption.text  = name;
+
+    selectMake.appendChild(newOption);
+}
+
+function addNewModel(modelID, name) {
+    let selectModel = document.getElementById("select-model");
+    let newOption   = document.createElement("option");
+    
+    newOption.value = modelID;
+    newOption.text  = name;
+
+    selectModel.appendChild(newOption);
 }
 
 webSocket.onmessage = (msg) => {
-    var resp = JSON.parse(msg.data);
+    let resp = JSON.parse(msg.data);
+    console.log(resp);
 
-    if (resp.type == "make") {
-        var selectMake = document.getElementById("select-make");
-        var newOption = document.createElement("option");
-        newOption.value = resp.data.MakeID;
-        newOption.text  = resp.data.Name;
-        selectMake.appendChild(newOption);
+    switch (resp.type.trim().toLowerCase()) {
+        case "make":
+            addNewMake(resp.data.MakeID, resp.data.Name);
+            break;
+
+        case "model":
+            addNewModel(resp.data.modelID, resp.data.Name);
+            break;
+
+        default:
+            break;
     }
 }
+
+// Events for when a selection is changed
+$("#select-make").on("change", (e) => {
+    // Get the value of the make
+    // and ensure it's non-blank
+    let makeID = $(e.target).find(":selected").val().trim();
+    console.log(makeID);
+
+    if (!makeID) { return; }
+
+    requestModels(makeID);
+})

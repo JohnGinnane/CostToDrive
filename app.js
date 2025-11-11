@@ -77,7 +77,10 @@ const webSocket = new ws.Server({ server: httpServer });
 // Web Socket Functions
 function getMakes(ws) {
     db.serialize(() => {
-        db.each("SELECT [MAK].[ID] AS [MakeID], [MAK].[Name] AS [Name] FROM [Makes] AS [MAK];", (err, row) => {
+        db.each(`SELECT [MAK].[ID] AS [MakeID],
+                        [MAK].[Name] AS [Name]
+                   FROM [Makes] AS [MAK];`,
+                (err, row) => {
             if (!err) {
                 ws.send(JSON.stringify({
                     type: "make",
@@ -88,10 +91,31 @@ function getMakes(ws) {
                 }));
             } else {
                 console.log(err);
-                return;
             }
         });
     });
+}
+
+function getModels(ws, makeID) {
+    db.serialize(() => {
+        db.each(`SELECT [MOD].[ID] AS [ModelID],
+                        [MOD].[Name] AS [Name]
+                   FROM [Models] AS [MOD]
+                  WHERE [MOD].[MakeID] = $makeID`, { $makeID: makeID },
+                (err, row) => {
+            if (!err) {
+                ws.send(JSON.stringify({
+                    type: "model",
+                    data: {
+                        ModelID: row.ModelID,
+                        Name:    row.Name
+                    }
+                }));            
+            } else {
+                console.log(err);
+            }
+        })
+    })
 }
 
 webSocket.on("connection", function connection(ws) {
@@ -106,6 +130,10 @@ webSocket.on("connection", function connection(ws) {
             case "requestmakes":
                 getMakes(ws);
                 break;
+
+            case "requestmodels":
+                let makeID = req.id.trim().toLowerCase();
+                getModels(ws, makeID);
 
             case "template":
                 break;

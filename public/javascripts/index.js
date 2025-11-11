@@ -6,5 +6,13 @@ const webSocket = new WebSocket('ws://localhost:3001', null, null, null, {reject
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
-    webSocket.send("hi");
+    requestMakes();
+}
+
+function requestMakes() {
+    var req = {
+        action: "requestMakes"
+    }
+
+    webSocket.send(JSON.stringify(req));
 }

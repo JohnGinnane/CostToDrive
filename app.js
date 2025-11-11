@@ -1,12 +1,12 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
+var createError  = require('http-errors');
+var express      = require('express');
+var path         = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var logger       = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var db = require("./db");
+var indexRouter  = require('./routes/index');
+var usersRouter  = require('./routes/users');
+var db           = require("./db");
 
 var app = express();
 
@@ -49,6 +49,8 @@ function log(str) {
     console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
 }
 
+app.use(express.static(path.join(__dirname, "public")));
+
 // WEB SOCKET
 const ws             = require("ws");
 //const uuid           = require("uuid");
@@ -73,13 +75,24 @@ httpServer.listen(3001, () =>  { log('HTTP running on port 3001') });
 const webSocket = new ws.Server({ server: httpServer });
 
 webSocket.on("connection", function connection(ws) {
-    console.log("new ws client");
-
     ws.on("message", function message(req) {
-        console.log("hello");
-    })
+        req = JSON.parse(req);
 
-    ws.on("close", (code, reason) => {
+        if (!req)        { return; }
+        if (!req.action) { return; }
 
-    })
+        switch (req.action.trim().toLowerCase()) {
+            case "requestmakes":
+                console.log("get makes pls");
+                break;
+
+            case "template":
+                break;
+
+            default:
+                break;
+        }
+
+        console.log(req);
+    });
 });

@@ -53,22 +53,24 @@ function log(str) {
 const ws             = require("ws");
 //const uuid           = require("uuid");
 const https          = require("https");
+const http           = require("http");
 const selfsigned     = require("selfsigned");
 
-// Create self signed cert for use by HTTPS
-const SSLCert =  selfsigned.generate(null, { days: 1 });
-const credential = {
-    key: SSLCert.private,
-    cert: SSLCert.cert
-}
+// // Create self signed cert for use by HTTPS
+// const SSLCert =  selfsigned.generate(null, { days: 1 });
+// const credential = {
+//     key: SSLCert.private,
+//     cert: SSLCert.cert
+// }
 
 // Start HTTPS server for secure web sockets
-const httpsServer = https.createServer(credential);
+//const httpsServer = https.createServer(credential);
+const httpServer = http.createServer();
 
-httpsServer.on('error', (err) => { console.error(err) });
-httpsServer.listen(3001, () =>  { log('HTTPS running on port 3001') });
+httpServer.on('error', (err) => { console.error(err) });
+httpServer.listen(3001, () =>  { log('HTTP running on port 3001') });
 
-const webSocket = new ws.Server({ server: httpsServer });
+const webSocket = new ws.Server({ server: httpServer });
 
 webSocket.on("connection", function connection(ws) {
     console.log("new ws client");

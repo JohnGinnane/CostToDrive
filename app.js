@@ -74,16 +74,37 @@ httpServer.listen(3001, () =>  { log('HTTP running on port 3001') });
 
 const webSocket = new ws.Server({ server: httpServer });
 
+// Web Socket Functions
+function getMakes(ws) {
+    db.serialize(() => {
+        db.each("SELECT [MAK].[ID] AS [MakeID], [MAK].[Name] AS [Name] FROM [Makes] AS [MAK];", (err, row) => {
+            if (!err) {
+                ws.send(JSON.stringify({
+                    type: "make",
+                    data: {
+                        MakeID: row.MakeID,
+                        Name: row.Name
+                    }
+                }));
+            } else {
+                console.log(err);
+                return;
+            }
+        });
+    });
+}
+
 webSocket.on("connection", function connection(ws) {
     ws.on("message", function message(req) {
         req = JSON.parse(req);
+        console.log(req);
 
         if (!req)        { return; }
         if (!req.action) { return; }
 
         switch (req.action.trim().toLowerCase()) {
             case "requestmakes":
-                console.log("get makes pls");
+                getMakes(ws);
                 break;
 
             case "template":
@@ -92,7 +113,5 @@ webSocket.on("connection", function connection(ws) {
             default:
                 break;
         }
-
-        console.log(req);
     });
 });

@@ -16,3 +16,19 @@ function requestMakes() {
 
     webSocket.send(JSON.stringify(req));
 }
+
+function requestModels(makeID) {
+
+}
+
+webSocket.onmessage = (msg) => {
+    var resp = JSON.parse(msg.data);
+
+    if (resp.type == "make") {
+        var selectMake = document.getElementById("select-make");
+        var newOption = document.createElement("option");
+        newOption.value = resp.data.MakeID;
+        newOption.text  = resp.data.Name;
+        selectMake.appendChild(newOption);
+    }
+}

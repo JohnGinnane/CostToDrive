@@ -20,7 +20,40 @@ function requestMakes() {
 function requestModels(makeID) {
     let req = {
         action: "requestModels",
-        id:     makeID
+        makeID:     makeID
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+function requestYears(makeID, modelID) {
+    let req = {
+        action:  "requestYears",
+        makeID:  makeID,
+        modelID: modelID
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+function requestFuelTypes(makeID, modelID, year) {
+    let req = {
+        action:  "requestFuelTypes",
+        makeID:  makeID,
+        modelID: modelID,
+        year:    year
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+function requestEngineSizes(makeID, modelID, year, fuelTypeID) {
+    let req = {
+        action:     "requestEngineSizes",
+        makeID:     makeID,
+        modelID:    modelID,
+        year:       year,
+        fuelTypeID: fuelTypeID
     }
 
     webSocket.send(JSON.stringify(req));
@@ -45,6 +78,15 @@ function addNewModel(modelID, name) {
     selectModel.appendChild(newOption);
 }
 
+function addNewYear(year) {
+    var selectYear = document.getElementById("select-year");
+    var newOption = document.createElement("option");
+    newOption.value = year;
+    newOption.text = year;
+
+    selectYear.appendChild(newOption);
+}
+
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
     console.log(resp);
@@ -55,7 +97,11 @@ webSocket.onmessage = (msg) => {
             break;
 
         case "model":
-            addNewModel(resp.data.modelID, resp.data.Name);
+            addNewModel(resp.data.ModelID, resp.data.Name);
+            break;
+
+        case "year":
+            addNewYear(resp.data.Year);
             break;
 
         default:
@@ -63,14 +109,27 @@ webSocket.onmessage = (msg) => {
     }
 }
 
+function getSelectedValue(selectNode) {
+    return $(selectNode).find(":selected").val().trim();
+}
+
 // Events for when a selection is changed
 $("#select-make").on("change", (e) => {
     // Get the value of the make
     // and ensure it's non-blank
-    let makeID = $(e.target).find(":selected").val().trim();
+    let makeID = getSelectedValue($("#select-make"));
     console.log(makeID);
 
     if (!makeID) { return; }
 
     requestModels(makeID);
-})
+});
+
+$("#select-model").on("change", (e) => {
+    let makeID = getSelectedValue($("#select-make"));
+    let modelID = getSelectedValue($("#select-model"));
+
+    if (!makeID || !modelID) { return; }
+
+    requestYears(makeID, modelID);
+});

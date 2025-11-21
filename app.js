@@ -103,19 +103,45 @@ function getModels(ws, makeID) {
                    FROM [Models] AS [MOD]
                   WHERE [MOD].[MakeID] = $makeID`, { $makeID: makeID },
                 (err, row) => {
-            if (!err) {
-                ws.send(JSON.stringify({
-                    type: "model",
-                    data: {
-                        ModelID: row.ModelID,
-                        Name:    row.Name
+                    if (!err) {
+                        ws.send(JSON.stringify({
+                            type: "model",
+                            data: {
+                                ModelID: row.ModelID,
+                                Name:    row.Name
+                            }
+                        }));            
+                    } else {
+                        console.error(err);
                     }
-                }));            
-            } else {
-                console.log(err);
-            }
-        })
+        });
     })
+}
+
+function getYears(ws, makeID, modelID) {
+    db.serialize(() => {
+        db.each(`SELECT [VEH].[Year]
+                   FROM [Makes] AS [MAK]
+                        INNER JOIN [Models] AS [MOD]
+                                ON [MOD].[MakeID] = [MAK].[ID]
+                        INNER JOIN [Vehicles] AS [VEH]
+                                ON [VEH].[ModelID] = [MOD].[ID]
+                  WHERE [MAK].[ID] = $makeID
+                    AND [MOD].[ID] = $modelID
+                        GROUP BY [VEH].[Year]`, { $makeID: makeID, $modelID: modelID },
+                (err, row) => {
+                    if (!err) {
+                        ws.send(JSON.stringify({
+                            type: "year",
+                            data: {
+                                Year: row.Year
+                            }
+                        }));
+                    } else {
+                        console.error(err);
+                    }
+        });
+    });
 }
 
 webSocket.on("connection", function connection(ws) {
@@ -132,8 +158,15 @@ webSocket.on("connection", function connection(ws) {
                 break;
 
             case "requestmodels":
-                let makeID = req.id.trim().toLowerCase();
+                var makeID = req.makeID.trim().toLowerCase();
                 getModels(ws, makeID);
+                break;
+
+            case "requestyears":
+                var makeID = req.makeID.trim().toLowerCase();
+                var modelID = req.modelID.trim().toLowerCase();
+                getYears(ws, makeID, modelID);
+                break;
 
             case "template":
                 break;

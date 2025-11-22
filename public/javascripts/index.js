@@ -107,6 +107,49 @@ function addNewEngineSize(engineSize) {
     selectEngineSize.appendChild(newOption);
 }
 
+//// CLEAR OPTIONS ////
+// Defined last parameter first
+// then each subsequent function
+// will call the previously
+// defined function
+function clearEngineSizeOptions() {
+    var selectEngineSize = $("#select-engine-size");
+    selectEngineSize.empty();
+    selectEngineSize.append("<option value='' selected>Select an Engine Size</option>");
+}
+
+function clearFuelTypeOptions() {
+    clearEngineSizeOptions();
+
+    var selectFuelType = $("#select-fuel-type");
+    selectFuelType.empty();
+    selectFuelType.append("<option value='' selected>Select a Fuel Type</option>");
+}
+
+function clearYearOptions() {
+    clearFuelTypeOptions();
+
+    var selectYear = $("#select-year");
+    selectYear.empty();
+    selectYear.append("<option value='' selected>Select a Year</option>")
+}
+
+function clearModelOptions() {
+    clearYearOptions();
+
+    var selectModel = $("#select-model");
+    selectModel.empty();
+    selectModel.append("<option value='' selected>Select a Model</option>");
+}
+
+function clearMakeOptions() {
+    clearModelOptions();
+    
+    var selectMake = $("#select-make");
+    selectMake.empty();
+    selectMake.append("<option value='' selected>Select a Make</option>")
+}
+
 //// INCOMING WEBSOCKETS ////
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
@@ -150,6 +193,7 @@ $("#select-make").on("change", (e) => {
 
     if (!makeID) { return; }
 
+    clearModelOptions();
     requestModels(makeID);
 });
 
@@ -159,6 +203,7 @@ $("#select-model").on("change", (e) => {
 
     if (!makeID || !modelID) { return; }
 
+    clearYearOptions();
     requestYears(makeID, modelID);
 });
 
@@ -171,6 +216,7 @@ $("#select-year").on("change", (e) => {
         return;
     }
 
+    clearFuelTypeOptions();
     requestFuelTypes(makeID, modelID, year);
 });
 
@@ -184,5 +230,6 @@ $("#select-fuel-type").on("change", (e) => {
         return;
     }
 
+    clearEngineSizeOptions();
     requestEngineSizes(makeID, modelID, year, fuelTypeID)
 })

@@ -9,6 +9,7 @@ webSocket.onopen = (event) => {
     requestMakes();
 }
 
+//// REQUEST FUNCTIONS ////
 function requestMakes() {
     let req = {
         action: "requestMakes"
@@ -59,9 +60,11 @@ function requestEngineSizes(makeID, modelID, year, fuelTypeID) {
     webSocket.send(JSON.stringify(req));
 }
 
+
+//// RESPONSE FUNCTIONS ////
 function addNewMake(makeID, name) {
-    let selectMake = document.getElementById("select-make");
-    let newOption = document.createElement("option");
+    let selectMake  = document.getElementById("select-make");
+    let newOption   = document.createElement("option");
     newOption.value = makeID;
     newOption.text  = name;
 
@@ -71,7 +74,6 @@ function addNewMake(makeID, name) {
 function addNewModel(modelID, name) {
     let selectModel = document.getElementById("select-model");
     let newOption   = document.createElement("option");
-    
     newOption.value = modelID;
     newOption.text  = name;
 
@@ -79,14 +81,33 @@ function addNewModel(modelID, name) {
 }
 
 function addNewYear(year) {
-    var selectYear = document.getElementById("select-year");
-    var newOption = document.createElement("option");
+    var selectYear  = document.getElementById("select-year");
+    var newOption   = document.createElement("option");
     newOption.value = year;
-    newOption.text = year;
+    newOption.text  = year;
 
     selectYear.appendChild(newOption);
 }
 
+function addNewFuelType(fuelTypeID, description) {
+    var selectFuelType = document.getElementById("select-fuel-type");
+    var newOption      = document.createElement("option");
+    newOption.value    = fuelTypeID;
+    newOption.text     = description;
+
+    selectFuelType.appendChild(newOption);
+}
+
+function addNewEngineSize(engineSize) {
+    var selectEngineSize = document.getElementById("select-engine-size");
+    var newOption        = document.createElement("option");
+    newOption.value      = engineSize;
+    newOption.text       = Number(engineSize).toFixed(1);
+
+    selectEngineSize.appendChild(newOption);
+}
+
+//// INCOMING WEBSOCKETS ////
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
     console.log(resp);
@@ -104,6 +125,13 @@ webSocket.onmessage = (msg) => {
             addNewYear(resp.data.Year);
             break;
 
+        case "fueltype":
+            addNewFuelType(resp.data.FuelTypeID, resp.data.Description);
+            break;
+
+        case "enginesize":
+            addNewEngineSize(resp.data.EngineSize);
+
         default:
             break;
     }
@@ -117,7 +145,7 @@ function getSelectedValue(selectNode) {
 $("#select-make").on("change", (e) => {
     // Get the value of the make
     // and ensure it's non-blank
-    let makeID = getSelectedValue($("#select-make"));
+    var makeID = getSelectedValue($("#select-make"));
     console.log(makeID);
 
     if (!makeID) { return; }
@@ -126,10 +154,35 @@ $("#select-make").on("change", (e) => {
 });
 
 $("#select-model").on("change", (e) => {
-    let makeID = getSelectedValue($("#select-make"));
-    let modelID = getSelectedValue($("#select-model"));
+    var makeID = getSelectedValue($("#select-make"));
+    var modelID = getSelectedValue($("#select-model"));
 
     if (!makeID || !modelID) { return; }
 
     requestYears(makeID, modelID);
 });
+
+$("#select-year").on("change", (e) => {
+    var makeID  = getSelectedValue($("#select-make"));
+    var modelID = getSelectedValue($("#select-model"));
+    var year    = getSelectedValue($("#select-year"));
+
+    if (!makeID || !modelID || !year) {
+        return;
+    }
+
+    requestFuelTypes(makeID, modelID, year);
+});
+
+$("#select-fuel-type").on("change", (e) => {
+    var makeID     = getSelectedValue($("#select-make"));
+    var modelID    = getSelectedValue($("#select-model"));
+    var year       = getSelectedValue($("#select-year"));
+    var fuelTypeID = getSelectedValue($("#select-fuel-type"));
+
+    if (!makeID || !modelID || !year || !fuelTypeID) {
+        return;
+    }
+
+    requestEngineSizes(makeID, modelID, year, fuelTypeID)
+})

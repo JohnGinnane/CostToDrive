@@ -128,13 +128,84 @@ function getYears(ws, makeID, modelID) {
                                 ON [VEH].[ModelID] = [MOD].[ID]
                   WHERE [MAK].[ID] = $makeID
                     AND [MOD].[ID] = $modelID
-                        GROUP BY [VEH].[Year]`, { $makeID: makeID, $modelID: modelID },
+                        GROUP BY [VEH].[Year]`,
+                { $makeID:  makeID,
+                  $modelID: modelID },
                 (err, row) => {
                     if (!err) {
                         ws.send(JSON.stringify({
                             type: "year",
                             data: {
                                 Year: row.Year
+                            }
+                        }));
+                    } else {
+                        console.error(err);
+                    }
+        });
+    });
+}
+
+function getFuelTypes(ws, makeID, modelID, year) {
+    db.serialize(() => {
+        db.each(`SELECT [FT].[ID],
+                        [FT].[Description]
+                   FROM [Makes] AS [MAK]
+                        INNER JOIN [Models] AS [MOD]
+                                ON [MAK].[ID] = [MOD].[MakeID]
+                        INNER JOIN [Vehicles] AS [VEH]
+                                ON [VEH].[ModelID] = [MOD].[ID]
+                        INNER JOIN [FuelTypes] AS [FT]
+                                ON [FT].[ID] = [VEH].[FuelID]
+                  WHERE [MAK].[ID]   = $makeID
+                    AND [MOD].[ID]   = $modelID
+                    AND [VEH].[Year] = $year
+                        GROUP BY [FT].[ID],
+                                 [FT].[Description]`, 
+                { $makeID:  makeID, 
+                  $modelID: modelID, 
+                  $year:    year },
+                (err, row) => {
+                    if (!err) {
+                        ws.send(JSON.stringify({
+                            type: "fueltype",
+                            data: {
+                                FuelTypeID: row.ID,
+                                Description: row.Description
+                            }
+                        }));
+                    } else {
+                        console.error(err);
+                    }
+        });
+    });
+}
+
+function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
+    db.serialize(() => {
+        db.each(`SELECT [VEH].[Displacement] AS [EngineSize]
+                   FROM [Makes] AS [MAK]
+                        INNER JOIN [Models] AS [MOD]
+                                ON [MAK].[ID] = [MOD].[MakeID]
+                        INNER JOIN [Vehicles] AS [VEH]
+                                ON [VEH].[ModelID] = [MOD].[ID]
+                        INNER JOIN [FuelTypes] AS [FT]
+                                ON [FT].[ID] = [VEH].[FuelID]
+                  WHERE [MAK].[ID]   = $makeID
+                    AND [MOD].[ID]   = $modelID
+                    AND [VEH].[Year] = $year
+                    AND [FT].[ID]    = $fuelTypeID
+                        GROUP BY [VEH].[Displacement]`, 
+                { $makeID:     makeID,
+                  $modelID:    modelID,
+                  $year:       year,
+                  $fuelTypeID: fuelTypeID },
+                (err, row) => {
+                    if (!err) {
+                        ws.send(JSON.stringify({
+                            type: "enginesize",
+                            data: {
+                                EngineSize: row.EngineSize
                             }
                         }));
                     } else {
@@ -159,13 +230,32 @@ webSocket.on("connection", function connection(ws) {
 
             case "requestmodels":
                 var makeID = req.makeID.trim().toLowerCase();
+                
                 getModels(ws, makeID);
                 break;
 
             case "requestyears":
-                var makeID = req.makeID.trim().toLowerCase();
+                var makeID  = req.makeID.trim().toLowerCase();
                 var modelID = req.modelID.trim().toLowerCase();
+                
                 getYears(ws, makeID, modelID);
+                break;
+
+            case "requestfueltypes":
+                var makeID  = req.makeID.trim().toLowerCase();
+                var modelID = req.modelID.trim().toLowerCase();
+                var year    = req.year.trim();
+                
+                getFuelTypes(ws, makeID, modelID, year);
+                break;
+
+            case "requestenginesizes":
+                var makeID     = req.makeID.trim();
+                var modelID    = req.modelID.trim();
+                var year       = req.year.trim();
+                var fuelTypeID = req.fuelTypeID.trim();
+                
+                getEngineSizes(ws, makeID, modelID, year, fuelTypeID);
                 break;
 
             case "template":

@@ -12,24 +12,72 @@ webSocket.onopen = (event) => {
 //// Session Variables ////
 let avgUrbanKMPL    = 0.0;
 let avgMotorwayKMPL = 0.0;
-let lastFuelEcoUnit = "";
+let lastFuelEconomyUnit = "";
 
-function convertFuelEco(value, unit) {
-    if (!value) { return; }
-    if (!unit)  { return; }
+function getSelectedValue(selectNode) {
+    return $(selectNode).find(":selected").val().trim();
+}
 
-    if (unit === "kmpl") { return value; }
+function getSelectedFuelEconomyUnit() {
+    return $("#select-fuel-eco-unit").find(":selected").val().trim().toLowerCase();
+}
 
-    switch (unit) {
+function convertFuelEco(curValue, curUnit, newUnit) {
+    if (!curValue) { return; }
+    if (!curUnit)  { return curValue; }
+    if (!newUnit)  { return curValue; }
+
+    curValue = Number(curValue);
+    curUnit  = curUnit.trim().toLowerCase();
+    newUnit  = newUnit.trim().toLowerCase();
+
+    if (curUnit === newUnit) { return curValue; }
+
+    // First convert to kilometre per litre (kmpl)
+    // then convert to other unit
+    var newValue = curValue;
+    
+    // All conversion formulae are taken from
+    // https://www.unitconverters.net/fuel-consumption-converter.html
+    
+    switch (curUnit) {
         case "lp100km":
+            newValue = 100.00 / curValue;
             break;
-
+        
         case "mpguk":
+            newValue = curValue * 0.35400619;
             break;
 
         case "mpgus":
+            newValue = curValue * 0.4251437075;
             break;
     }
+
+    switch (newUnit) {
+        case "kmpl":
+            return newValue;
+
+        case "lp100km":
+            return 100.00 / newValue;
+
+        case "mpguk":
+            return newValue * 2.8248093628;
+
+        case "mpgus":
+            return newValue * 2.3521458329;
+    }
+
+    // Default case
+    return curValue;
+}
+
+function updateFuelEco(newValue) {
+    if (!newValue) {
+        newValue = Number($("#input-fuel-eco").val());
+    }
+
+    $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()));
 }
 
 //// REQUEST FUNCTIONS ////
@@ -221,10 +269,6 @@ webSocket.onmessage = (msg) => {
     }
 }
 
-function getSelectedValue(selectNode) {
-    return $(selectNode).find(":selected").val().trim();
-}
-
 // Events for when a selection is changed
 $("#select-make").on("change", (e) => {
     // Get the value of the make
@@ -297,22 +341,25 @@ $("#select-engine-size").on("change", (e) => {
 // Whenever the driving style range changes
 // we need to recalculate the fuel economy
 $("#input-driving-style").on("change", (e) => {
-    console.log("hi");
     // Interpolate between urban and motorway driving
-    var diff = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
-    console.log(diff);
+    var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
+    var drivingStylePercent = Number($("#input-driving-style").val()) / 100.00;
+    var expectedEconomy     = avgUrbanKMPL + (economyDifference * drivingStylePercent);
 
-    var drivingStylePercent = Number(e.target.value) / 100;
-    console.log(drivingStylePercent);
-
-    $("#input-fuel-eco").val(avgUrbanKMPL + (diff * drivingStylePercent));
+    updateFuelEco(expectedEconomy);
 });
 
 // Recalculate if we changed unit of measurement
 $("#select-fuel-eco-unit").on("change", (e) => {
-    var unitOfMeasurement = getSelectedValue($("#select-fuel-eco-unit")).trim().toLowerCase();
+    var unitOfMeasurement = getSelectedFuelEconomyUnit();
 
-    if (unitOfMeasurement === lastFuelEcoUnit) { return; }
+    if (unitOfMeasurement === lastFuelEconomyUnit) { return; }
 
-    lastFuelEcoUnit = unitOfMeasurement;
+    updateFuelEco();
+    
+    lastFuelEconomyUnit = unitOfMeasurement;
 });
+
+$(window).on("load", () => {
+    lastFuelEconomyUnit = getSelectedFuelEconomyUnit();
+})

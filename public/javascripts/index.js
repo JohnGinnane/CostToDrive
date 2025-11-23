@@ -9,6 +9,10 @@ webSocket.onopen = (event) => {
     requestMakes();
 }
 
+//// Session Variables ////
+let avgUrbanKMPL    = 0.0;
+let avgMotorwayKMPL = 0.0;
+
 //// REQUEST FUNCTIONS ////
 function requestMakes() {
     let req = {
@@ -60,6 +64,19 @@ function requestEngineSizes(makeID, modelID, year, fuelTypeID) {
     webSocket.send(JSON.stringify(req));
 }
 
+function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize) {
+    let req = {
+        action:     "requestFuelEconomies",
+        makeID:     makeID,
+        modelID:    modelID,
+        year:       year,
+        fuelTypeID: fuelTypeID,
+        engineSize: engineSize
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
 
 //// RESPONSE FUNCTIONS ////
 function addNewMake(makeID, name) {
@@ -102,7 +119,7 @@ function addNewEngineSize(engineSize) {
     var selectEngineSize = document.getElementById("select-engine-size");
     var newOption        = document.createElement("option");
     newOption.value      = engineSize;
-    newOption.text       = Number(engineSize).toFixed(1);
+    newOption.text       = engineSize.toFixed(1);
 
     selectEngineSize.appendChild(newOption);
 }
@@ -157,23 +174,29 @@ webSocket.onmessage = (msg) => {
 
     switch (resp.type.trim().toLowerCase()) {
         case "make":
-            addNewMake(resp.data.MakeID, resp.data.Name);
+            addNewMake(Number(resp.data.MakeID), resp.data.Name);
             break;
 
         case "model":
-            addNewModel(resp.data.ModelID, resp.data.Name);
+            addNewModel(Number(resp.data.ModelID), resp.data.Name);
             break;
 
         case "year":
-            addNewYear(resp.data.Year);
+            addNewYear(Number(resp.data.Year));
             break;
 
         case "fueltype":
-            addNewFuelType(resp.data.FuelTypeID, resp.data.Description);
+            addNewFuelType(Number(resp.data.FuelTypeID), resp.data.Description);
             break;
 
         case "enginesize":
-            addNewEngineSize(resp.data.EngineSize);
+            addNewEngineSize(Number(resp.data.EngineSize));
+            break;
+
+        case "fueleconomy":
+            avgUrbanKMPL    = Number(resp.data.AvgUrbanKMPL);
+            avgMotorwayKMPL = Number(resp.data.AvgMotorwayKMPL);
+            break;
 
         default:
             break;
@@ -232,4 +255,23 @@ $("#select-fuel-type").on("change", (e) => {
 
     clearEngineSizeOptions();
     requestEngineSizes(makeID, modelID, year, fuelTypeID)
+})
+
+// Once an engine size is selected we need 
+// to get the average fuel eco for city and
+// for motorway driving. The slider will be
+// a range of 0% to 100% in terms of how much
+// driving is on the motorway
+$("#select-engine-size").on("change", (e) => {
+    var makeID     = getSelectedValue($("#select-make"));
+    var modelID    = getSelectedValue($("#select-model"));
+    var year       = getSelectedValue($("#select-year"));
+    var fuelTypeID = getSelectedValue($("#select-fuel-type"));
+    var engineSize = getSelectedValue($("#select-engine-size"));
+
+    if (!makeID || !modelID || !year || !fuelTypeID || !engineSize) {
+        return;
+    }
+
+    requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize);
 })

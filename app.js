@@ -196,10 +196,12 @@ function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
                     AND [VEH].[Year] = $year
                     AND [FT].[ID]    = $fuelTypeID
                         GROUP BY [VEH].[Displacement]`, 
+
                 { $makeID:     makeID,
                   $modelID:    modelID,
                   $year:       year,
                   $fuelTypeID: fuelTypeID },
+
                 (err, row) => {
                     if (!err) {
                         ws.send(JSON.stringify({
@@ -211,7 +213,47 @@ function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
                     } else {
                         console.error(err);
                     }
-        });
+                });
+    });
+}
+
+function getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize) {
+    db.serialize(() => {
+        db.each(`SELECT AVG([UrbanKMPL]) AS [AvgUrbanKMPL],
+                        AVG([MotorwayKMPL]) AS [AvgMotorwayKMPL]
+                   FROM [Makes] AS [MAK]
+                        INNER JOIN [Models] AS [MOD]
+                                ON [MAK].[ID] = [MOD].[MakeID]
+                        INNER JOIN [Vehicles] AS [VEH]
+                                ON [VEH].[ModelID] = [MOD].[ID]
+                        INNER JOIN [FuelTypes] AS [FT]
+                                ON [FT].[ID] = [VEH].[FuelID]
+                  WHERE [MAK].[ID]           = $makeID
+                    AND [MOD].[ID]           = $modelID
+                    AND [VEH].[Year]         = $year
+                    AND [FT].[ID]            = $fuelTypeID
+                    AND [VEH].[Displacement] = $engineSize
+                        LIMIT 1`,
+
+                { $makeID:     makeID,
+                  $modelID:    modelID,
+                  $year:       year,
+                  $fuelTypeID: fuelTypeID,
+                  $engineSize: engineSize },
+
+                (err, row) => {
+                    if (!err) {
+                        ws.send(JSON.stringify({
+                            type: "fueleconomy",
+                            data: {
+                                AvgUrbanKMPL:    row.AvgUrbanKMPL,
+                                AvgMotorwayKMPL: row.AvgMotorwayKMPL
+                            }
+                        }));
+                    } else {
+                        console.error(err);
+                    }
+                });
     });
 }
 
@@ -229,33 +271,43 @@ webSocket.on("connection", function connection(ws) {
                 break;
 
             case "requestmodels":
-                var makeID = req.makeID.trim().toLowerCase();
+                var makeID = req.makeID;
                 
                 getModels(ws, makeID);
                 break;
 
             case "requestyears":
-                var makeID  = req.makeID.trim().toLowerCase();
-                var modelID = req.modelID.trim().toLowerCase();
+                var makeID  = req.makeID;
+                var modelID = req.modelID;
                 
                 getYears(ws, makeID, modelID);
                 break;
 
             case "requestfueltypes":
-                var makeID  = req.makeID.trim().toLowerCase();
-                var modelID = req.modelID.trim().toLowerCase();
-                var year    = req.year.trim();
+                var makeID  = req.makeID;
+                var modelID = req.modelID;
+                var year    = req.year;
                 
                 getFuelTypes(ws, makeID, modelID, year);
                 break;
 
             case "requestenginesizes":
-                var makeID     = req.makeID.trim();
-                var modelID    = req.modelID.trim();
-                var year       = req.year.trim();
-                var fuelTypeID = req.fuelTypeID.trim();
+                var makeID     = req.makeID;
+                var modelID    = req.modelID;
+                var year       = req.year;
+                var fuelTypeID = req.fuelTypeID;
                 
                 getEngineSizes(ws, makeID, modelID, year, fuelTypeID);
+                break;
+
+            case "requestfueleconomies":
+                var makeID     = req.makeID;
+                var modelID    = req.modelID;
+                var year       = req.year;
+                var fuelTypeID = req.fuelTypeID;
+                var engineSize = req.engineSize;
+                
+                getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize);
                 break;
 
             case "template":

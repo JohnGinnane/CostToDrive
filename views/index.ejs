@@ -82,19 +82,41 @@
             </div>
 
             <!-- Driving Style Slider -->
-            <div class="justify-content-center h-100 col-9 row m-1 rb">
-                <div class="col-3">
-                    <image src="/images/emoji-cityscape-w10.png" width="50"/>
+            <div class="justify-content-center h-100 col-9 row m-1">
+                <div class="col-3 my-auto p-1">
+                    <img src="/images/emoji-cityscape-w10.png" class="float-end" width="50"/>
                 </div>
 
-                <div class="col-6">
-                    <input id="input-driving-style" class=" form-range w-100" type="range"/>
+                <div class="col-6 my-auto p-0">
+                    <input id="input-driving-style" min="0" max="100" step="1" value="50" class=" form-range w-100" type="range"/>
                 </div>
 
-                <div class="col-3">
-                    <image src="/images/emoji-motorway-w10.png" width="50"/>
+                <div class="col-3 my-auto p-1">
+                    <img src="/images/emoji-motorway-w10.png" class="float-start" width="50"/>
                 </div>
             </div>
+
+            <!-- Fuel Economy -->
+             <div class="justify-content-center h-100 col-9 row m-1">
+                <div class="col-3 my-auto p-0">
+                    <p class="text-end h4 my-auto">Fuel Economy</p>
+                </div>
+
+                <div class="col-6 row">
+                    <div class="col-6 rb">
+                        <input type="text" id="input-fuel-eco" class="form-control w-100"/>
+                    </div>
+
+                    <div class="col-6 rb">
+                        <select id="select-fuel-eco-unit" class="form-select">
+                            <option value="kmpl">KM/L</option>
+                            <option value="lp100km">L/100KM</option>
+                            <option value="mpguk">MPG (UK)</option>
+                            <option value="mpgus">MPG (US)</option>
+                        </select>
+                    </div>
+                </div>
+             </div>
         </div>
     </div>
   </body>

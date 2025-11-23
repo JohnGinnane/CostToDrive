@@ -12,6 +12,25 @@ webSocket.onopen = (event) => {
 //// Session Variables ////
 let avgUrbanKMPL    = 0.0;
 let avgMotorwayKMPL = 0.0;
+let lastFuelEcoUnit = "";
+
+function convertFuelEco(value, unit) {
+    if (!value) { return; }
+    if (!unit)  { return; }
+
+    if (unit === "kmpl") { return value; }
+
+    switch (unit) {
+        case "lp100km":
+            break;
+
+        case "mpguk":
+            break;
+
+        case "mpgus":
+            break;
+    }
+}
 
 //// REQUEST FUNCTIONS ////
 function requestMakes() {
@@ -170,7 +189,6 @@ function clearMakeOptions() {
 //// INCOMING WEBSOCKETS ////
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
-    console.log(resp);
 
     switch (resp.type.trim().toLowerCase()) {
         case "make":
@@ -274,4 +292,27 @@ $("#select-engine-size").on("change", (e) => {
     }
 
     requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize);
-})
+});
+
+// Whenever the driving style range changes
+// we need to recalculate the fuel economy
+$("#input-driving-style").on("change", (e) => {
+    console.log("hi");
+    // Interpolate between urban and motorway driving
+    var diff = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
+    console.log(diff);
+
+    var drivingStylePercent = Number(e.target.value) / 100;
+    console.log(drivingStylePercent);
+
+    $("#input-fuel-eco").val(avgUrbanKMPL + (diff * drivingStylePercent));
+});
+
+// Recalculate if we changed unit of measurement
+$("#select-fuel-eco-unit").on("change", (e) => {
+    var unitOfMeasurement = getSelectedValue($("#select-fuel-eco-unit")).trim().toLowerCase();
+
+    if (unitOfMeasurement === lastFuelEcoUnit) { return; }
+
+    lastFuelEcoUnit = unitOfMeasurement;
+});

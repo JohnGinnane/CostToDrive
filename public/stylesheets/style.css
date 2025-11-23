@@ -10,3 +10,21 @@ a {
 .rb {
     border: 1px solid red;
 }
+
+#input-driving-style::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: url('/images/emoji-car-w10-32x32.png');
+  cursor: pointer;
+}
+
+#input-driving-style::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: url('/images/emoji-car-w10-32x32.png');
+  cursor: pointer;
+}

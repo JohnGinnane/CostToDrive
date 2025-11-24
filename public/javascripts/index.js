@@ -77,7 +77,7 @@ function updateFuelEco(newValue) {
         newValue = Number($("#input-fuel-eco").val());
     }
 
-    $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()));
+    $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()).toFixed(2));
 }
 
 //// REQUEST FUNCTIONS ////
@@ -262,6 +262,9 @@ webSocket.onmessage = (msg) => {
         case "fueleconomy":
             avgUrbanKMPL    = Number(resp.data.AvgUrbanKMPL);
             avgMotorwayKMPL = Number(resp.data.AvgMotorwayKMPL);
+            // Manually trigger the "change" event so we can
+            // calculate the eco
+            $("#input-driving-style").trigger("change");
             break;
 
         default:
@@ -344,7 +347,15 @@ $("#input-driving-style").on("change", (e) => {
     // Interpolate between urban and motorway driving
     var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
     var drivingStylePercent = Number($("#input-driving-style").val()) / 100.00;
-    var expectedEconomy     = avgUrbanKMPL + (economyDifference * drivingStylePercent);
+    var expectedEconomy = 1;
+
+    if (avgMotorwayKMPL > avgUrbanKMPL) {
+        expectedEconomy = avgUrbanKMPL    + (economyDifference * drivingStylePercent);
+    } else {
+        expectedEconomy = avgMotorwayKMPL + (economyDifference * drivingStylePercent);
+    }
+
+    expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit());
 
     updateFuelEco(expectedEconomy);
 });
@@ -352,6 +363,7 @@ $("#input-driving-style").on("change", (e) => {
 // Recalculate if we changed unit of measurement
 $("#select-fuel-eco-unit").on("change", (e) => {
     var unitOfMeasurement = getSelectedFuelEconomyUnit();
+    console.log("Changed to " + unitOfMeasurement);
 
     if (unitOfMeasurement === lastFuelEconomyUnit) { return; }
 

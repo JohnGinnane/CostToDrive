@@ -1,6 +1,8 @@
 body {
   padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  /* font: 14px "Lucida Grande", Helvetica, Arial, sans-serif; */
+  font-family: 'Rubik';
+  font: 14px;
 }
 
 a {
@@ -27,4 +29,9 @@ a {
   border: 0;
   background: url('/images/emoji-car-w10-32x32.png');
   cursor: pointer;
+}
+
+@font-face {
+    font-family: 'Rubik';
+    src: url(/fonts/Rubik/Rubik-VariableFont_wght.ttf);
 }

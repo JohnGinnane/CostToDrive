@@ -372,24 +372,35 @@ $("#select-fuel-eco-unit").on("change", (e) => {
     lastFuelEconomyUnit = unitOfMeasurement;
 });
 
+// Store the original value when we focus on the field
+$(".numeric-2").on("focusin", function (e) {
+    $(this).data("previous-value", $(this).val());
+});
+
 // Format any fields that are "Numeric" to look like numbers
 $(".numeric-2").on("keydown", function (e) {
-    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+    console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
 
-    if (e.ctrlKey) { return; }
+    if (e.ctrlKey)  { return; }
+    if (e.shiftKey) { return; }
 
-    if (e.shiftKey) {
-        e.preventDefault();
-    }
-
-    if ((e.keyCode >= 48 && e.keyCode <= 57) || 
-        (e.keyCode >= 96 && e.keyCode <= 105) || 
-         e.keyCode ==   8 ||
-         e.keyCode ==   9 ||
-         e.keyCode ==  44 ||
-         e.keyCode ==  46 ||
-         e.keyCode == 188 ||
-         e.keyCode == 190) {
+    if ((e.keyCode >=  48 && e.keyCode <=  57) || 
+        (e.keyCode >=  96 && e.keyCode <= 105) || 
+        (e.keyCode >= 112 && e.keyCode <= 123) ||
+         e.keyCode ==   8 ||  // Backspace
+         e.keyCode ==   9 ||  // Tab
+         e.keyCode ==  35 ||  // End
+         e.keyCode ==  36 ||  // Home
+         e.keyCode ==  37 ||  // Left arrow
+         e.keyCode ==  38 ||  // Up arrow
+         e.keyCode ==  39 ||  // Right arrow
+         e.keyCode ==  40 ||  // Down arrow 
+         e.keyCode ==  44 ||  // Print Screen
+         e.keyCode ==  46 ||  // Delete key
+         e.keyCode == 109 ||  // Num pad minus symbol
+         e.keyCode == 172 ||  // Num pad minus symbol
+         e.keyCode == 188 ||  // Comma
+         e.keyCode == 190 ) { // Decimal place
         // Good
     } else {
         // Any other non-numeric 
@@ -399,15 +410,52 @@ $(".numeric-2").on("keydown", function (e) {
     // Does the current value already have a full stop?
     var curValue = $(this).val();
 
+    if (!curValue) { return; }
+
     if (curValue.indexOf(".") > 0 && e.keyCode == 190) {
         e.preventDefault();
     }
 });
 
-$(".numeric-2").on("change", function (e) {
-    var curValue = $(this).val();
-    console.log(curValue);
-    console.log(e);
+function numericChanged(e) {
+    var previousValue = $(this).data("previous-value");
+    var newValue = $(this).val();
+
+    if (!newValue) {
+        $(this).val(previousValue);
+        return;
+    }
+
+    console.log("a");
+
+    // Try to convert the new value into a number to make sure it's good
+    if (typeof newValue != "string") {
+        $(this).val(previousValue);
+        return;
+    }
+
+    console.log("b");
+
+    // Remove commas from the number
+    newValue = newValue.replaceAll(",", "");
+
+    if (!isNaN(newValue) && !isNaN(parseFloat(newValue))) {
+        // Number is good, let's convert and format
+        var numberFormat = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2});
+        newValue = numberFormat.format(newValue);
+        console.log(newValue);
+
+        $(this).val(newValue);
+        return;
+    }
+
+    // Fall back to previous value
+    $(this).val(previousValue);
+}
+
+//$(".numeric-2").on("focusout", numericChanged);
+$(".numeric-2").each( function() {
+    $(this).on("change", numericChanged);
 });
 
 $(window).on("load", () => {

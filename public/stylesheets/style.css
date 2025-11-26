@@ -35,3 +35,7 @@ a {
     font-family: 'Rubik';
     src: url(/fonts/Rubik/Rubik-VariableFont_wght.ttf);
 }
+
+.numeric-2 {
+    text-align: end;
+}

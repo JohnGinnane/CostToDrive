@@ -372,6 +372,44 @@ $("#select-fuel-eco-unit").on("change", (e) => {
     lastFuelEconomyUnit = unitOfMeasurement;
 });
 
+// Format any fields that are "Numeric" to look like numbers
+$(".numeric-2").on("keydown", function (e) {
+    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+
+    if (e.ctrlKey) { return; }
+
+    if (e.shiftKey) {
+        e.preventDefault();
+    }
+
+    if ((e.keyCode >= 48 && e.keyCode <= 57) || 
+        (e.keyCode >= 96 && e.keyCode <= 105) || 
+         e.keyCode ==   8 ||
+         e.keyCode ==   9 ||
+         e.keyCode ==  44 ||
+         e.keyCode ==  46 ||
+         e.keyCode == 188 ||
+         e.keyCode == 190) {
+        // Good
+    } else {
+        // Any other non-numeric 
+        e.preventDefault();
+    }
+
+    // Does the current value already have a full stop?
+    var curValue = $(this).val();
+
+    if (curValue.indexOf(".") > 0 && e.keyCode == 190) {
+        e.preventDefault();
+    }
+});
+
+$(".numeric-2").on("change", function (e) {
+    var curValue = $(this).val();
+    console.log(curValue);
+    console.log(e);
+});
+
 $(window).on("load", () => {
     lastFuelEconomyUnit = getSelectedFuelEconomyUnit();
-})
+});

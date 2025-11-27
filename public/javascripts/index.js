@@ -73,7 +73,7 @@ function convertFuelEco(curValue, curUnit, newUnit) {
 }
 
 function convertDistance(curValue, curUnit, newUnit) {
-    
+
 }
 
 function convertCurrency(curValue, curUnit, newUnit) {
@@ -426,7 +426,7 @@ $(".numeric-2").on("keydown", function (e) {
 });
 
 // Recalculate cost if any of these fields change
-$(".calc-cost").on("", function(e) {
+$(".calc-cost").on("change", function(e) {
     var fuelPrice   = $("#input-fuel-price").val();
     var distance    = $("#input-distance").val();
     var fuelEconomy = $("#input-fuel-eco").val();
@@ -434,6 +434,7 @@ $(".calc-cost").on("", function(e) {
     // Convert values into common units:
     // 1. Distance     -> Kilometres
     // 2. Fuel Economy -> Kilometres per Litre
+    console.log("Calculating cost!");
 });
 
 function numericChanged(e) {

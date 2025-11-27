@@ -13,6 +13,18 @@ webSocket.onopen = (event) => {
 let avgUrbanKMPL    = 0.0;
 let avgMotorwayKMPL = 0.0;
 let lastFuelEconomyUnit = "";
+let lastDistanceUnit = "";
+
+function coerceNumber(val) {
+    // remove any comma separators
+    if (!val) { return; }
+    if (typeof val != "string") { return; }
+
+    val = val.replaceAll(",", "");
+    val = Number(val);
+
+    return val;
+}
 
 function getSelectedValue(selectNode) {
     return $(selectNode).find(":selected").val().trim();
@@ -73,7 +85,38 @@ function convertFuelEco(curValue, curUnit, newUnit) {
 }
 
 function convertDistance(curValue, curUnit, newUnit) {
+    if (!curValue) { return; }
+    if (!curUnit)  { return curValue; }
+    if (!newUnit)  { return curValue; }
 
+    curValue = coerceNumber(curValue);
+    curUnit  = curUnit.trim().toLowerCase();
+    newUnit  = newUnit.trim().toLowerCase();
+
+    // As before, let's convert to KM first
+    var newValue = curValue;
+
+    switch (curUnit) {
+        case "km":
+            newValue = curValue;
+            break;
+
+        case "m":
+            newValue = curValue * 1.609344;
+            break;
+    }
+
+    // Now see what we need to convert into
+    switch (newUnit) {
+        case "km":
+            break;
+
+        case "m":
+            newValue = curValue * 0.6213711922;
+            break;
+    }
+
+    return newValue;
 }
 
 function convertCurrency(curValue, curUnit, newUnit) {
@@ -84,7 +127,7 @@ function convertCurrency(curValue, curUnit, newUnit) {
 
 function updateFuelEco(newValue) {
     if (!newValue) {
-        newValue = Number($("#input-fuel-eco").val());
+        newValue = coerceNumber($("#input-fuel-eco").val());
     }
 
     $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()).toFixed(2));
@@ -438,6 +481,8 @@ $(".calc-cost").on("change", function(e) {
 });
 
 function numericChanged(e) {
+    console.log("numeric-changed-start");
+
     var previousValue = $(this).data("previous-value");
     var newValue = $(this).val();
 
@@ -457,8 +502,7 @@ function numericChanged(e) {
 
     if (!isNaN(newValue) && !isNaN(parseFloat(newValue))) {
         // Number is good, let's convert and format
-        var numberFormat = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        newValue = numberFormat.format(newValue);
+        newValue = formatNumber(newValue);
 
         $(this).val(newValue);
         return;
@@ -466,6 +510,19 @@ function numericChanged(e) {
 
     // Fall back to previous value
     $(this).val(previousValue);
+    
+    console.log("numeric-changed-end");
+}
+
+function formatNumber(val, locale = undefined, decimalPlaces = 2) {
+    if (!val) { return; }
+    decimalPlaces = decimalPlaces || 2;
+
+    var numberFormat = new Intl.NumberFormat(locale, 
+                                             { minimumFractionDigits: decimalPlaces, 
+                                               maximumFractionDigits: decimalPlaces });
+    
+    return numberFormat.format(val);
 }
 
 //$(".numeric-2").on("focusout", numericChanged);
@@ -473,6 +530,22 @@ $(".numeric-2").each( function() {
     $(this).on("change", numericChanged);
 });
 
+// Handle distance conversion
+$("#select-distance-unit").on("focusin", function(e) {
+    lastDistanceUnit = $(this).val();
+});
+
+$("#select-distance-unit").on("change", function(e) {
+    var newDistanceUnit = $(this).val();
+    var inputDistance = $("#input-distance");
+
+    var newDistance = convertDistance(inputDistance.val(), lastDistanceUnit, newDistanceUnit);
+    inputDistance.val(formatNumber(newDistance));
+});
+
 $(window).on("load", () => {
     lastFuelEconomyUnit = getSelectedFuelEconomyUnit();
+
+    // When we first load the page, re-apply any formatting
+    $(".numeric-2").each(numericChanged);
 });

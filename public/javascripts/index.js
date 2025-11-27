@@ -115,7 +115,7 @@ function convertDistance(curValue, curUnit, newUnit) {
             newValue = curValue * 0.6213711922;
             break;
     }
-
+    
     return newValue;
 }
 
@@ -540,6 +540,7 @@ $("#select-distance-unit").on("change", function(e) {
     var inputDistance = $("#input-distance");
 
     var newDistance = convertDistance(inputDistance.val(), lastDistanceUnit, newDistanceUnit);
+    lastDistanceUnit = newDistanceUnit;
     inputDistance.val(formatNumber(newDistance));
 });
 

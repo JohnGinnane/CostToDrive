@@ -18,12 +18,15 @@ let lastDistanceUnit = "";
 function coerceNumber(val) {
     // remove any comma separators
     if (!val) { return; }
+    if (typeof val == "number") { return val; }
     if (typeof val != "string") { return; }
 
+    // remove commas from "1,234.56"
     val = val.replaceAll(",", "");
-    val = Number(val);
 
-    return val;
+    if (!isNaN(val) && !isNaN(parseFloat(val))) {
+        return parseFloat(val);
+    }
 }
 
 function getSelectedValue(selectNode) {
@@ -115,7 +118,7 @@ function convertDistance(curValue, curUnit, newUnit) {
             newValue = curValue * 0.6213711922;
             break;
     }
-    
+
     return newValue;
 }
 
@@ -477,6 +480,18 @@ $(".calc-cost").on("change", function(e) {
     // Convert values into common units:
     // 1. Distance     -> Kilometres
     // 2. Fuel Economy -> Kilometres per Litre
+    distance = coerceNumber(convertDistance(distance, lastDistanceUnit, "km"));
+    fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, lastFuelEconomyUnit, "kmpl"));
+
+    console.log(distance);
+    console.log(fuelEconomy);
+
+    var totalLitres = distance / fuelEconomy;
+    var totalCost = totalLitres * coerceNumber(fuelPrice);
+    console.log(totalCost);
+
+    $("#input-total-cost").val(formatNumber(totalCost));
+
     console.log("Calculating cost!");
 });
 
@@ -498,18 +513,8 @@ function numericChanged(e) {
     }
 
     // Remove commas from the number
-    newValue = newValue.replaceAll(",", "");
-
-    if (!isNaN(newValue) && !isNaN(parseFloat(newValue))) {
-        // Number is good, let's convert and format
-        newValue = formatNumber(newValue);
-
-        $(this).val(newValue);
-        return;
-    }
-
-    // Fall back to previous value
-    $(this).val(previousValue);
+    newValue = formatNumber(coerceNumber(newValue));
+    $(this).val(newValue);
     
     console.log("numeric-changed-end");
 }

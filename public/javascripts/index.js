@@ -277,7 +277,6 @@ $("#select-make").on("change", (e) => {
     // Get the value of the make
     // and ensure it's non-blank
     var makeID = getSelectedValue($("#select-make"));
-    console.log(makeID);
 
     if (!makeID) { return; }
 
@@ -363,7 +362,6 @@ $("#input-driving-style").on("change", (e) => {
 // Recalculate if we changed unit of measurement
 $("#select-fuel-eco-unit").on("change", (e) => {
     var unitOfMeasurement = getSelectedFuelEconomyUnit();
-    console.log("Changed to " + unitOfMeasurement);
 
     if (unitOfMeasurement === lastFuelEconomyUnit) { return; }
 
@@ -379,7 +377,7 @@ $(".numeric-2").on("focusin", function (e) {
 
 // Format any fields that are "Numeric" to look like numbers
 $(".numeric-2").on("keydown", function (e) {
-    console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
 
     if (e.ctrlKey)  { return; }
     if (e.shiftKey) { return; }
@@ -426,24 +424,19 @@ function numericChanged(e) {
         return;
     }
 
-    console.log("a");
-
     // Try to convert the new value into a number to make sure it's good
     if (typeof newValue != "string") {
         $(this).val(previousValue);
         return;
     }
 
-    console.log("b");
-
     // Remove commas from the number
     newValue = newValue.replaceAll(",", "");
 
     if (!isNaN(newValue) && !isNaN(parseFloat(newValue))) {
         // Number is good, let's convert and format
-        var numberFormat = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2});
+        var numberFormat = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         newValue = numberFormat.format(newValue);
-        console.log(newValue);
 
         $(this).val(newValue);
         return;

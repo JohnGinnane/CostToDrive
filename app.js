@@ -3,10 +3,56 @@ var express      = require('express');
 var path         = require('path');
 var cookieParser = require('cookie-parser');
 var logger       = require('morgan');
+const http       = require("http");
+const https      = require("https");
+const fs         = require("fs");
 
 var indexRouter  = require('./routes/index');
 var usersRouter  = require('./routes/users');
 var db           = require("./db");
+
+// Used to convert currencies
+var apiCurrencyKey = "";
+
+// Create default values config
+var config = {
+    api_currency_key: "",
+    last_started:     new Date().toISOString()
+}
+
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
+//console.log(new Date().toISOString());
+function saveConfig(filepath, obj) {
+    log("Saving config");
+    fs.writeFileSync(filepath, JSON.stringify(obj, null, 4), "utf-8");
+}
+
+// Check if config file exists
+fs.statSync("./config.json", function(err, stats) {
+    if (err) {
+        if (err.code === "ENOENT") {
+            log("Config file not found, creating one");
+            saveConfig("./config.json", config);
+        } else {
+            // Fatal error trying to read the
+            // the file, which we really need
+            console.log(err);
+            process.exit(-1);
+        }
+    } else {
+        // We need to open the file and load it into a variable
+        config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8", flag: "r" }));
+        log("Last started: " + new Date(config.last_started).toLocaleString());
+        config.last_started = new Date().toISOString();
+        saveConfig("./config.json", config);
+    }
+
+    apiCurrencyKey = config.api_currency_key;
+});
 
 var app = express();
 
@@ -22,6 +68,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+// Check database for latest currency conversions
+// Get the most recent (if any!), and when it was
+// last fetched from API
+
+// // Get conversions
+// https.get(`https://api.currencyapi.com/v3/latest?apikey=${apiCurrencyKey}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
+//     let data = ''
+//     resp.on('data', chunk => {
+//         data += chunk;
+//     });
+
+//     resp.on("end", () => {
+//         var peopleData = JSON.parse(data);
+//         console.log(peopleData);
+//     });
+// });
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
@@ -44,19 +107,13 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
-function log(str) {
-    var today  = new Date();
-    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
-}
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // WEB SOCKET
 const ws             = require("ws");
 //const uuid           = require("uuid");
-const https          = require("https");
-const http           = require("http");
 const selfsigned     = require("selfsigned");
+const { DATE } = require('sequelize');
 
 // // Create self signed cert for use by HTTPS
 // const SSLCert =  selfsigned.generate(null, { days: 1 });

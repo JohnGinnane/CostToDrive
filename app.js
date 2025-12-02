@@ -11,9 +11,6 @@ var indexRouter  = require('./routes/index');
 var usersRouter  = require('./routes/users');
 var db           = require("./db");
 
-// Used to convert currencies
-var apiCurrencyKey = "";
-
 // Create default values config
 var config = {
     api_currency_key: "",
@@ -50,8 +47,6 @@ fs.statSync("./config.json", function(err, stats) {
         config.last_started = new Date().toISOString();
         saveConfig("./config.json", config);
     }
-
-    apiCurrencyKey = config.api_currency_key;
 });
 
 var app = express();
@@ -73,18 +68,18 @@ app.use('/users', usersRouter);
 // Get the most recent (if any!), and when it was
 // last fetched from API
 
-// // Get conversions
-// https.get(`https://api.currencyapi.com/v3/latest?apikey=${apiCurrencyKey}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
-//     let data = ''
-//     resp.on('data', chunk => {
-//         data += chunk;
-//     });
+// Get conversions
+https.get(`https://api.currencyapi.com/v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
+    let data = ''
+    resp.on('data', chunk => {
+        data += chunk;
+    });
 
-//     resp.on("end", () => {
-//         var peopleData = JSON.parse(data);
-//         console.log(peopleData);
-//     });
-// });
+    resp.on("end", () => {
+        var peopleData = JSON.parse(data);
+        console.log(peopleData);
+    });
+});
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));

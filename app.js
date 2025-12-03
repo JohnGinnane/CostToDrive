@@ -22,32 +22,35 @@ function log(str) {
     console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
 }
 
-//console.log(new Date().toISOString());
 function saveConfig(filepath, obj) {
     log("Saving config");
     fs.writeFileSync(filepath, JSON.stringify(obj, null, 4), "utf-8");
 }
 
 // Check if config file exists
-fs.statSync("./config.json", function(err, stats) {
-    if (err) {
-        if (err.code === "ENOENT") {
-            log("Config file not found, creating one");
-            saveConfig("./config.json", config);
-        } else {
-            // Fatal error trying to read the
-            // the file, which we really need
-            console.log(err);
-            process.exit(-1);
-        }
-    } else {
-        // We need to open the file and load it into a variable
-        config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8", flag: "r" }));
-        log("Last started: " + new Date(config.last_started).toLocaleString());
-        config.last_started = new Date().toISOString();
+log("Looking for config...");
+
+try {
+    const config_stats = fs.statSync("./config.json");
+
+    // We need to open the file and load it into a variable
+    config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8", flag: "r" }));
+    log("Last started: " + new Date(config.last_started).toLocaleString());
+    config.last_started = new Date().toISOString();
+    saveConfig("./config.json", config);
+} catch (err) { 
+    if (err.code === "ENOENT") {
+        log("Config file not found, creating one");
         saveConfig("./config.json", config);
+    } else {
+        // Fatal error trying to read the
+        // the file, which we really need
+        console.log(err);
+        process.exit(-1);
     }
-});
+}
+
+log("config done");
 
 var app = express();
 
@@ -69,15 +72,73 @@ app.use('/users', usersRouter);
 // last fetched from API
 
 // Get conversions
-https.get(`https://api.currencyapi.com/v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
+log("Getting up to date currency exchange rates...");
+const apiBaseURL = "https://api.currencyapi.com/";
+
+https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
     let data = ''
     resp.on('data', chunk => {
         data += chunk;
     });
 
     resp.on("end", () => {
-        var peopleData = JSON.parse(data);
-        console.log(peopleData);
+        var currencyData = JSON.parse(data);
+        console.log(currencyData);
+        log("currency done");
+
+        // Need to get next batch number from currency log table
+        // then insert new batch of exchange rates
+        db.serialize(() => {
+            db.each(`SELECT MAX([CCL].[Batch]) + 1 AS [NextBatch]
+                       FROM [CurrencyConversionLog] AS [CCL]`,
+                    (err, row) => {
+                if (!err) {
+                    var nextBatch = row.NextBatch;
+                    var timeStamp = currencyData.meta.last_updated_at;
+                    
+                    log(`Inserting currency rates batch ${nextBatch}`);
+                    
+                    // First, insert our base currency with a value of 1.00
+                    var sql = `INSERT INTO [CurrencyConversionLog] (
+                                      [SourceID],
+                                      [Batch],
+                                      [Timestamp],
+                                      [Currency],
+                                      [Value])
+                               SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
+                                      ${nextBatch},
+                                      ${timeStamp},
+                                      'EUR',
+                                      1.00`;
+                    
+                    log(sql);
+                    db.run(sql);
+
+                    // Iterate over currencies and insert
+                    Object.keys(currencyData.data).forEach(function(currency) {
+                        var currency_code = currencyData.data[currency].code;
+                        var currency_rate = currencyData.data[currency].value;
+                        
+                        var sql = `INSERT INTO [CurrencyConversionLog] (
+                                          [SourceID],
+                                          [Batch],
+                                          [Timestamp],
+                                          [Currency],
+                                          [Value])
+                                      SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
+                                          ${nextBatch},
+                                          ${timeStamp},
+                                          '${currency_code}',
+                                          ${currency_rate}`;
+
+                        log(sql);
+                        db.run(sql);
+                    });
+                } else {
+                    console.error(err);
+                }
+            });
+        });
     });
 });
 

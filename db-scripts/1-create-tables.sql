@@ -19,7 +19,16 @@ CREATE TABLE IF NOT EXISTS [FuelTypes] (
        [ID]           INTEGER      NOT NULL,
 	   [Description]  TEXT         NOT NULL,
 	   PRIMARY KEY ([ID] AUTOINCREMENT));
-	   
+	   	   
+/* 2025-12-02 - Added source table */
+/* Must be created before [Vehicles] so we can use FK */
+CREATE TABLE IF NOT EXISTS [Sources] (
+	   [ID]           INTEGER      NOT NULL,
+       [URL]          TEXT         NOT NULL,
+       [DateAdded]    TIMESTAMP    NOT NULL   DEFAULT CURRENT_TIMESTAMP,
+       
+	   PRIMARY KEY ([ID] AUTOINCREMENT)
+);
 
 CREATE TABLE IF NOT EXISTS [Vehicles] (
        [ID]           INTEGER      NOT NULL, -- This is our ID
@@ -28,7 +37,7 @@ CREATE TABLE IF NOT EXISTS [Vehicles] (
 	   [ModelDetail]  TEXT         NOT NULL, -- No normalisation here, as one "base model" can have many variants
 	   [Year]         INTEGER      NOT NULL,
 	   [FuelID]       INTEGER      NOT NULL,
-	   [Source]       TEXT             NULL, -- Where did we get this vehicle's data?
+	   [SourceID]     INTEGER          NULL, -- Where did we get this vehicle's data?
 	   [OriginalID]   TEXT             NULL, -- What is the ID for this vehicle in the above source?
 	   [Displacement] REAL             NULL,
 	   [Cylinders]    INTEGER          NULL,
@@ -36,5 +45,18 @@ CREATE TABLE IF NOT EXISTS [Vehicles] (
 	   [MotorwayKMPL] REAL             NULL,
 	   
 	   PRIMARY KEY ([ID] AUTOINCREMENT),
-	   CONSTRAINT  [FK_ModelID] FOREIGN KEY ([ModelID]) REFERENCES [Models]([ID]),
-	   CONSTRAINT  [FK_FuelID]  FOREIGN KEY ([FuelID])  REFERENCES [FuelTypes]([ID]));
+	   CONSTRAINT  [FK_ModelID]  FOREIGN KEY ([ModelID])  REFERENCES [Models]([ID]),
+	   CONSTRAINT  [FK_FuelID]   FOREIGN KEY ([FuelID])   REFERENCES [FuelTypes]([ID]),
+	   CONSTRAINT  [FK_SourceID] FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]));
+
+/* 2025-12-02 - Added currency log table */
+CREATE TABLE [CurrencyConversionLog] (
+       [ID]           INTEGER,
+       [SourceID]     INTEGER,
+       [Batch]        INTEGER      NOT NULL, -- This will be a number that tied multiple entries together
+       [Timestamp]    TIMESTAMP    NOT NULL   DEFAULT CURRENT_TIMESTAMP,
+       [Currency]     TEXT         NOT NULL, -- In the standard 3 letter format of "EUR"
+       [Value]        REAL         NOT NULL,
+	   
+       PRIMARY KEY ([ID] AUTOINCREMENT),
+	   CONSTRAINT  [FK_SourceID] FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]));

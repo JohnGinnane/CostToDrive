@@ -70,6 +70,49 @@ app.use('/users', usersRouter);
 // Check database for latest currency conversions
 // Get the most recent (if any!), and when it was
 // last fetched from API
+// This object will contain a list of currency codes and their rates
+// Whichever rate has a value of 1.0 is considered the "prime" currency
+// In order to convery from currency X to currency Y, we must first convert
+// to from X to "prime", then from "prime" to Y
+var currencyConversion = {
+    last_updated_at: null,
+    idx_prime:       -1,
+    rates: {
+        code: "test",
+        rate: -1.0
+    }
+}
+
+db.serialize(() => {
+    db.each(`SELECT MAX([CCL].[Timestamp]) AS [LastUpdated],
+                    [CCL].[Currency]       AS [Currency],
+	                AVG([CCL].[Value])     AS [Rate]
+               FROM [CurrencyConversionLog] AS [CCL]
+              WHERE julianday(CURRENT_TIMESTAMP) - julianday([CCL].[Timestamp]) < 1
+                    GROUP BY [CCL].[Currency]
+             HAVING AVG([CCL].[Value]) > 0
+                    ORDER BY [LastUpdated] ASC,
+	                         [Currency]    ASC`,
+            (err, row) => {
+        if (!err) {
+            currencyConversion.last_updated_at = row.LastUpdated;
+            currencyConversion.rates[row.Currency] = row.Rate;
+
+            // Set the prime currency if rate was 1.0
+            if (row.Rate === 1 && currencyConversion.idx_prime < 0) {
+                currencyConversion.idx_prime = currencyConversion.rates.length;
+            }
+        } else {
+            console.error(err);
+        }
+    });
+});
+
+console.log(currencyConversion);
+
+function getSourceID(db, URL) {
+    
+}
 
 // Get conversions
 log("Getting up to date currency exchange rates...");
@@ -107,11 +150,11 @@ https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=G
                                       [Value])
                                SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
                                       ${nextBatch},
-                                      ${timeStamp},
+                                      '${timeStamp}',
                                       'EUR',
                                       1.00`;
                     
-                    log(sql);
+                    // log(sql);
                     db.run(sql);
 
                     // Iterate over currencies and insert
@@ -127,11 +170,11 @@ https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=G
                                           [Value])
                                       SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
                                           ${nextBatch},
-                                          ${timeStamp},
+                                          '${timeStamp}',
                                           '${currency_code}',
                                           ${currency_rate}`;
 
-                        log(sql);
+                        // log(sql);
                         db.run(sql);
                     });
                 } else {

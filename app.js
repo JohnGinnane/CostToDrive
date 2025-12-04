@@ -45,7 +45,7 @@ try {
     } else {
         // Fatal error trying to read the
         // the file, which we really need
-        console.log(err);
+        console.error(err);
         process.exit(-1);
     }
 }
@@ -75,96 +75,80 @@ app.use('/users', usersRouter);
 // In order to convery from currency X to currency Y, we must first convert
 // to from X to "prime", then from "prime" to Y
 var currencyConversion = null;
-
-// console.log(currencyConversion);
-
-db.getCurrencyRates().then((res) => {
-    currencyConversion = res;
-}).then(() => {
-    if (!currencyConversion) {
-        log("No recent currency rates found, fetching new data!");
-        
-    } else {
-
-    }
-})
-
-// Get conversions
-log("Getting up to date currency exchange rates...");
 const apiBaseURL = "https://api.currencyapi.com/";
 
-// Get the source ID that we're using to get our currency exchange rates
-db.getSourceID(apiBaseURL).then(value => {
-    return value;
-}).then(dbSourceAPI => {
-    db.getCurrencyRates()
-});
+db.getCurrencyRates().then((res) => {
+    log("Fetched conversion from DB");
+    currencyConversion = res;
+    log(res);
 
-https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
-    let data = ''
-    resp.on('data', chunk => {
-        data += chunk;
-    });
+    var fetchNewRates = false;
+    var dateCutOff = new Date();
+    dateCutOff.setHours(dateCutOff.getHours() - 24);
+    log("Date cutoff: ");
+    log(dateCutOff);
 
-    resp.on("end", () => {
-        var currencyData = JSON.parse(data);
-        console.log(currencyData);
-        log("currency done");
+    if (!currencyConversion) {
+        log("no currency obj!");
+        fetchNewRates = true;
+    } else {
+        if (currencyConversion.last_updated_at < dateCutOff) {
+            log("Currency exchange rates out of date");
+            fetchNewRates = true;
+        }
+    }
 
-        // Need to get next batch number from currency log table
-        // then insert new batch of exchange rates
-        db.serialize(() => {
-            db.each(`SELECT MAX([CCL].[Batch]) + 1 AS [NextBatch]
-                       FROM [CurrencyConversionLog] AS [CCL]`,
-                    (err, row) => {
-                if (!err) {
-                    var nextBatch = row.NextBatch;
-                    var timeStamp = currencyData.meta.last_updated_at;
+    if (fetchNewRates) {
+        log("Fetching new exchange rates!");
+
+        // We need to get the ID of the source we're using
+        // So when we log new rates, we can reference this source
+        db.getSourceID(apiBaseURL).then((dbAPISource) => {
+            // Do API call
+            https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
+                let data = ''
+                resp.on('data', chunk => {
+                    data += chunk;
+                });
+
+                resp.on("end", () => {
+                    var newCurrencyData = JSON.parse(data);
                     
-                    log(`Inserting currency rates batch ${nextBatch}`);
-                    
-                    // First, insert our base currency with a value of 1.00
-                    var sql = `INSERT INTO [CurrencyConversionLog] (
-                                      [SourceID],
-                                      [Batch],
-                                      [Timestamp],
-                                      [Currency],
-                                      [Value])
-                               SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
-                                      ${nextBatch},
-                                      '${timeStamp}',
-                                      'EUR',
-                                      1.00`;
-                    
-                    // log(sql);
-                    db.run(sql);
+                    // This is expected to look like
+                    // {
+                    //     meta: { last_updated_at: '2025-12-02T23:59:59Z' },
+                    //     data: {
+                    //         CAD: { code: 'CAD', value: 1.6244535552 },
+                    //         GBP: { code: 'GBP', value: 0.8796628277 },
+                    //         USD: { code: 'USD', value: 1.1627905365 }
+                    //     }
+                    // }
 
-                    // Iterate over currencies and insert
-                    Object.keys(currencyData.data).forEach(function(currency) {
-                        var currency_code = currencyData.data[currency].code;
-                        var currency_rate = currencyData.data[currency].value;
-                        
-                        var sql = `INSERT INTO [CurrencyConversionLog] (
-                                          [SourceID],
-                                          [Batch],
-                                          [Timestamp],
-                                          [Currency],
-                                          [Value])
-                                      SELECT (SELECT [SRC].[ID] FROM [Sources] AS [SRC] WHERE [SRC].[URL] = '${apiBaseURL}' LIMIT 1) AS [SourceID],
-                                          ${nextBatch},
-                                          '${timeStamp}',
-                                          '${currency_code}',
-                                          ${currency_rate}`;
+                    // Convert to our standard conversion object
+                    currencyConversion = {
+                        last_updated_at: newCurrencyData.meta.last_updated_at,
+                        prime_currency:   "EUR",
+                        // Insert our prime currency rate
+                        rates:           { EUR: 1.0 }
+                    };
 
-                        // log(sql);
-                        db.run(sql);
+                    // Iterate over currencies and add to our rates
+                    Object.keys(newCurrencyData.data).forEach(function(currency) {
+                        currencyConversion.rates[currency] = newCurrencyData.data[currency].value;
                     });
-                } else {
-                    console.error(err);
-                }
+
+                    // console.log("Our conversion object:");
+                    // console.log(currencyConversion);
+
+                    // Pass this conversion object to the DB to log
+                    db.insertNewCurrencyRates(currencyConversion, dbAPISource.ID).then().catch((err) => {
+                        console.log("Error inserting new rates:");
+                        console.error(err);
+                    });
+                });
             });
         });
-    });
+    }
 });
 
 // Add Bootstrap
@@ -228,7 +212,7 @@ function getMakes(ws) {
                     }
                 }));
             } else {
-                console.log(err);
+                console.error(err);
             }
         });
     });

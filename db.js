@@ -14,16 +14,83 @@ async function getSourceID(URL) {
                       LIMIT 1`;
     var params = [URL];
 
-    return conn.get(sql, params, function(err, res) {
-        if (!err) {
-            return Promise.resolve({
-                ID: res.ID,
-                URL: URL,
-                LastUpdated: res.LastUpdated
-            });
-        } else {
-            return Promise.reject(err);
+    return new Promise((resolve, reject) => {
+        conn.get(sql, params, function(err, res) {
+            if (!err) {
+                resolve({
+                    ID: res.ID,
+                    URL: URL,
+                    LastUpdated: res.LastUpdated
+                });
+            } else {
+                reject(err);
+            }
+        });
+    });
+}
+
+async function insertNewCurrencyRates(currencyConversion, sourceID) {
+    // This object is expected to be in the format of
+    // {
+    //     last_updated_at: "2025-12-02T23:59:59Z",
+    //     rates: {
+    //         EUR: 1,
+    //         GBP: 2
+    //     }
+    // }
+
+    console.log("Inserting the following:");
+    console.log(currencyConversion);
+
+    // Convert our object into a select statement that we can 
+    // use to insert into the database
+    var sql = "";
+    var params = [
+        currencyConversion.last_updated_at || "NULL", 
+        sourceID                           || "NULL"
+    ];
+
+    Object.keys(currencyConversion.rates).forEach(function(currency) {
+        if (sql !== "") {
+            sql += " UNION ALL\n                   ";
         }
+
+        sql = sql + `SELECT ? AS [Currency], ? AS [Rate]`
+        params.push(currency, currencyConversion.rates[currency]);
+    });
+
+    sql = `INSERT INTO [CurrencyConversionLog] (
+                  [SourceID],
+                  [Batch],
+                  [Timestamp],
+                  [Currency],
+                  [Value])
+            
+           SELECT [Source].[ID]         AS [SourceID],
+                  [CCL].[LastBatch] + 1 AS [Batch],
+                  [Meta].[LastUpdated]  AS [Timestamp],
+                  [NewRates].[Currency] AS [Currency],
+                  [NewRates].[Rate]     AS [Value]
+             FROM ( SELECT ? AS [LastUpdated] ) AS [Meta],
+                  ( SELECT ? AS [ID] ) AS [Source],
+                  (
+                   ${sql}
+                  ) AS [NewRates],
+                  ( SELECT MAX([CCL].[Batch]) AS [LastBatch]
+                      FROM [CurrencyConversionLog] AS [CCL]
+                           LIMIT 1 ) AS [CCL]`;
+
+    // console.log(sql);
+    // console.log(params);
+
+    return new Promise((resolve, reject) => {
+        conn.all(sql, params, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
     });
 }
 
@@ -38,41 +105,42 @@ async function getCurrencyRates() {
                       [CCL].[Currency]       AS [Currency],
                       AVG([CCL].[Value])     AS [Rate]
                  FROM [CurrencyConversionLog] AS [CCL]
-                WHERE julianday(CURRENT_TIMESTAMP) - julianday([CCL].[Timestamp]) < 1
+                --WHERE julianday(CURRENT_TIMESTAMP) - julianday([CCL].[Timestamp]) < 1
                       GROUP BY [CCL].[Currency]
                HAVING AVG([CCL].[Value]) > 0
                       ORDER BY [LastUpdated] ASC,
                                [Currency]    ASC`;
 
-    conn.serialize(() => {
-        conn.each(sql,
-                  (err, row) => {
-                    if (!err) {
-                        result.last_updated_at = row.LastUpdated;
-                        result.rates[row.Currency] = row.Rate;
+    return new Promise((resolve, reject) => {
+        conn.serialize(() => {
+            conn.each(sql,
+                      (err, row) => {
+                        if (!err) {
+                            result.last_updated_at = new Date(row.LastUpdated);
+                            result.rates[row.Currency] = row.Rate;
 
-                        // Set the prime currency if rate was 1.0
-                        if (row.Rate == 1 && result.prime_currency == "") {
-                            result.prime_currency = row.Currency;
+                            // Set the prime currency if rate was 1.0
+                            if (row.Rate == 1 && result.prime_currency == "") {
+                                result.prime_currency = row.Currency;
+                            }
+                        } else {
+                            console.error(err);
+                        }}, 
+                      (err) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(result);
                         }
-                    } else {
-                        console.error(err);
-                    }}, 
-                  (err) => {
-                    if (err) {
-                        return Promise.reject(err);
-                    } else {
-                        console.log("fin");
-                        console.log(result);
-                        return Promise.resolve(result);
-                    }
-        });        
+            });
+        });
     });
 }
 
 
 module.exports = {
     db: conn,
-    getCurrencyRates: getCurrencyRates,
-    getSourceID:      getSourceID
+    getCurrencyRates:       getCurrencyRates,
+    getSourceID:            getSourceID,
+    insertNewCurrencyRates: insertNewCurrencyRates
 };

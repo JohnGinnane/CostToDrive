@@ -54,9 +54,10 @@ CREATE TABLE [CurrencyConversionLog] (
        [ID]           INTEGER,
        [SourceID]     INTEGER,
        [Batch]        INTEGER      NOT NULL, -- This will be a number that tied multiple entries together
-       [Timestamp]    TIMESTAMP    NOT NULL   DEFAULT CURRENT_TIMESTAMP,
+       [Timestamp]    TIMESTAMP        NULL, -- Should come from the API
        [Currency]     TEXT         NOT NULL, -- In the standard 3 letter format of "EUR"
        [Value]        REAL         NOT NULL,
+	   [Retrieved]    TIMESTAMP    NOT NULL   DEFAULT CURRENT_TIMESTAMP, -- This is when we inserted
 	   
        PRIMARY KEY ([ID] AUTOINCREMENT),
 	   CONSTRAINT  [FK_SourceID] FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]));

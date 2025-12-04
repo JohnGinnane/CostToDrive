@@ -151,15 +151,16 @@
                 <div class="col-6">
                     <div class="row">
                         <div class="col-3 pe-0">
-                            <select id="select-price-currency" class="form-select calc-cost">
+                            <select id="select-price-currency" class="form-select calc-cost currency-selector">
                                 <option value="eur">€</option>
                                 <option value="gbp">£</option>
                                 <option value="usd">$</option>
+                                <option value="cad">C$</option>
                             </select>
                         </div>
 
                         <div class="col-9 ps-0">
-                            <input type="text" id="input-fuel-price" class="form-control w-100 numeric-2 calc-cost" value="2.00"/>
+                            <input type="text" id="input-fuel-price" class="form-control w-100 numeric-2 calc-cost currency-field" value="2.00"/>
                         </div>
                     </div>
                 </div>
@@ -176,15 +177,16 @@
                 <div class="col-6">
                     <div class="row">
                         <div class="col-3 pe-0">
-                            <select id="select-price-currency" class="form-select">
+                            <select id="select-total-currency" class="form-select currency-selector">
                                 <option value="eur">€</option>
                                 <option value="gbp">£</option>
                                 <option value="usd">$</option>
+                                <option value="cad">C$</option>
                             </select>
                         </div>
 
                         <div class="col-9 ps-0">
-                            <input type="text" id="input-total-cost" class="form-control w-100 numeric-2"/>
+                            <input type="text" id="input-total-cost" class="form-control w-100 numeric-2 currency-field"/>
                         </div>                        
                     </div>
                 </div>

@@ -78,22 +78,19 @@ var currencyConversion = null;
 const apiBaseURL = "https://api.currencyapi.com/";
 
 db.getCurrencyRates().then((res) => {
-    log("Fetched conversion from DB");
     currencyConversion = res;
-    log(res);
 
     var fetchNewRates = false;
     var dateCutOff = new Date();
     dateCutOff.setHours(dateCutOff.getHours() - 24);
-    log("Date cutoff: ");
-    log(dateCutOff);
 
+    // If we don't have any conversion rates or 
+    // the ones we have are out of date, then
+    // fetch new rates!
     if (!currencyConversion) {
-        log("no currency obj!");
         fetchNewRates = true;
     } else {
         if (currencyConversion.last_updated_at < dateCutOff) {
-            log("Currency exchange rates out of date");
             fetchNewRates = true;
         }
     }
@@ -104,17 +101,22 @@ db.getCurrencyRates().then((res) => {
         // We need to get the ID of the source we're using
         // So when we log new rates, we can reference this source
         db.getSourceID(apiBaseURL).then((dbAPISource) => {
-            // Do API call
+            // Do API call to get exchange rates
             https.get(`${apiBaseURL}v3/latest?apikey=${config.api_currency_key}&currencies=GBP%2CUSD%2CCAD&base_currency=EUR`, resp => {
                 let data = ''
                 resp.on('data', chunk => {
                     data += chunk;
                 });
 
+                // When the API call ends:
+                // 1. Parse the data
+                // 2. Convert to our format
+                // 3. Insert into the database
+                // This whole process really needs its own class...
                 resp.on("end", () => {
                     var newCurrencyData = JSON.parse(data);
                     
-                    // This is expected to look like
+                    // This "data" is expected to look like
                     // {
                     //     meta: { last_updated_at: '2025-12-02T23:59:59Z' },
                     //     data: {
@@ -177,8 +179,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // WEB SOCKET
 const ws             = require("ws");
 //const uuid           = require("uuid");
-const selfsigned     = require("selfsigned");
-const { DATE } = require('sequelize');
+//const selfsigned     = require("selfsigned");
 
 // // Create self signed cert for use by HTTPS
 // const SSLCert =  selfsigned.generate(null, { days: 1 });
@@ -198,8 +199,8 @@ const webSocket = new ws.Server({ server: httpServer });
 
 // Web Socket Functions
 function getMakes(ws) {
-    db.serialize(() => {
-        db.each(`SELECT [MAK].[ID] AS [MakeID],
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT [MAK].[ID] AS [MakeID],
                         [MAK].[Name] AS [Name]
                    FROM [Makes] AS [MAK];`,
                 (err, row) => {
@@ -219,8 +220,8 @@ function getMakes(ws) {
 }
 
 function getModels(ws, makeID) {
-    db.serialize(() => {
-        db.each(`SELECT [MOD].[ID] AS [ModelID],
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT [MOD].[ID] AS [ModelID],
                         [MOD].[Name] AS [Name]
                    FROM [Models] AS [MOD]
                   WHERE [MOD].[MakeID] = $makeID`, { $makeID: makeID },
@@ -241,8 +242,8 @@ function getModels(ws, makeID) {
 }
 
 function getYears(ws, makeID, modelID) {
-    db.serialize(() => {
-        db.each(`SELECT [VEH].[Year]
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT [VEH].[Year]
                    FROM [Makes] AS [MAK]
                         INNER JOIN [Models] AS [MOD]
                                 ON [MOD].[MakeID] = [MAK].[ID]
@@ -269,8 +270,8 @@ function getYears(ws, makeID, modelID) {
 }
 
 function getFuelTypes(ws, makeID, modelID, year) {
-    db.serialize(() => {
-        db.each(`SELECT [FT].[ID],
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT [FT].[ID],
                         [FT].[Description]
                    FROM [Makes] AS [MAK]
                         INNER JOIN [Models] AS [MOD]
@@ -304,8 +305,8 @@ function getFuelTypes(ws, makeID, modelID, year) {
 }
 
 function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
-    db.serialize(() => {
-        db.each(`SELECT [VEH].[Displacement] AS [EngineSize]
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT [VEH].[Displacement] AS [EngineSize]
                    FROM [Makes] AS [MAK]
                         INNER JOIN [Models] AS [MOD]
                                 ON [MAK].[ID] = [MOD].[MakeID]
@@ -340,8 +341,8 @@ function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
 }
 
 function getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize) {
-    db.serialize(() => {
-        db.each(`SELECT AVG([UrbanKMPL]) AS [AvgUrbanKMPL],
+    db.conn.serialize(() => {
+        db.conn.each(`SELECT AVG([UrbanKMPL]) AS [AvgUrbanKMPL],
                         AVG([MotorwayKMPL]) AS [AvgMotorwayKMPL]
                    FROM [Makes] AS [MAK]
                         INNER JOIN [Models] AS [MOD]
@@ -377,6 +378,13 @@ function getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize) {
                     }
                 });
     });
+}
+
+function getCurrencyConversion(ws) {
+    ws.send(JSON.stringify({
+        type: "currencyconversion",
+        data: currencyConversion
+    }));
 }
 
 webSocket.on("connection", function connection(ws) {
@@ -432,7 +440,8 @@ webSocket.on("connection", function connection(ws) {
                 getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize);
                 break;
 
-            case "template":
+            case "requestcurrencyconversion":
+                getCurrencyConversion(ws);
                 break;
 
             default:

@@ -7,13 +7,15 @@ const webSocket = new WebSocket('ws://localhost:3001', null, null, null, {reject
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
     requestMakes();
+    requestCurrencyConversion();
 }
 
 //// Session Variables ////
-let avgUrbanKMPL    = 0.0;
-let avgMotorwayKMPL = 0.0;
+let avgUrbanKMPL        = 0.0;
+let avgMotorwayKMPL     = 0.0;
 let lastFuelEconomyUnit = "";
-let lastDistanceUnit = "";
+let lastDistanceUnit    = "";
+let currencyConversion  = null;
 
 function coerceNumber(val) {
     // remove any comma separators
@@ -123,9 +125,7 @@ function convertDistance(curValue, curUnit, newUnit) {
 }
 
 function convertCurrency(curValue, curUnit, newUnit) {
-    // We might need to fetch this price externally...
-    // but for now let's just settle on arbitrary values
-
+    
 }
 
 function updateFuelEco(newValue) {
@@ -137,6 +137,14 @@ function updateFuelEco(newValue) {
 }
 
 //// REQUEST FUNCTIONS ////
+function requestCurrencyConversion() {
+    let req = {
+        action: "requestCurrencyConversion"
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
 function requestMakes() {
     let req = {
         action: "requestMakes"
@@ -323,6 +331,9 @@ webSocket.onmessage = (msg) => {
             $("#input-driving-style").trigger("change");
             break;
 
+        case "currencyconversion":
+            currencyConversion = resp.data;
+
         default:
             break;
     }
@@ -483,6 +494,8 @@ $(".calc-cost").on("change", function(e) {
     distance = coerceNumber(convertDistance(distance, lastDistanceUnit, "km"));
     fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, lastFuelEconomyUnit, "kmpl"));
 
+    if (!fuelEconomy) { return; }
+
     console.log(distance);
     console.log(fuelEconomy);
 
@@ -547,6 +560,35 @@ $("#select-distance-unit").on("change", function(e) {
     var newDistance = convertDistance(inputDistance.val(), lastDistanceUnit, newDistanceUnit);
     lastDistanceUnit = newDistanceUnit;
     inputDistance.val(formatNumber(newDistance));
+});
+
+// Handle currency conversion
+$(".currency-selector").on("focusin", function(e) {
+    $(this).data("previous-value", $(this).val());
+});
+
+$(".currency-selector").on("change", function(e) {
+    var previousCurrency = $(this).data("previous-value");
+    var newCurrency = $(this).val();
+    var thisID = e.target.id;
+    
+    console.log(`changing from ${previousCurrency} to ${newCurrency}`);
+
+    if (currencyConversion) {
+        // Get list of all currency holding fields and convert them
+        $(".currency-field").each((k, v) => {
+            var curValue = $(this).val();
+            var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
+            v.value = newValue;
+        });
+    }
+
+    // Apply the change to all other currency selectors
+    $(".currency-selector").each((k, v) => {
+        if (v.id != thisID) {
+            v.value = newCurrency;
+        }
+    });
 });
 
 $(window).on("load", () => {

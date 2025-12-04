@@ -139,7 +139,7 @@ async function getCurrencyRates() {
 
 
 module.exports = {
-    db: conn,
+    conn: conn,
     getCurrencyRates:       getCurrencyRates,
     getSourceID:            getSourceID,
     insertNewCurrencyRates: insertNewCurrencyRates

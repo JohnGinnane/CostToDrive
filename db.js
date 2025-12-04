@@ -30,7 +30,7 @@ async function getSourceID(URL) {
 async function getCurrencyRates() {
     var result = {
         last_updated_at: null,
-        idx_prime:       -1,
+        prime_currency:   "",
         rates:           { }
     };
 
@@ -52,8 +52,8 @@ async function getCurrencyRates() {
                         result.rates[row.Currency] = row.Rate;
 
                         // Set the prime currency if rate was 1.0
-                        if (row.Rate == 1 && result.idx_prime < 0) {
-                            result.idx_prime = result.rates.length;
+                        if (row.Rate == 1 && result.prime_currency == "") {
+                            result.prime_currency = row.Currency;
                         }
                     } else {
                         console.error(err);

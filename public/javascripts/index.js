@@ -17,6 +17,8 @@ let lastFuelEconomyUnit = "";
 let lastDistanceUnit    = "";
 let currencyConversion  = null;
 
+//#region Functions
+
 function coerceNumber(val) {
     // remove any comma separators
     if (!val) { return; }
@@ -157,7 +159,60 @@ function updateFuelEco(newValue) {
     }
 }
 
-//// REQUEST FUNCTIONS ////
+function calculateCostToDrive() {
+    var fuelPrice   = $("#input-fuel-price").val();
+    var distance    = $("#input-distance").val();
+    var fuelEconomy = $("#input-fuel-eco").val();
+
+    // Convert values into common units:
+    // 1. Distance     -> Kilometres
+    // 2. Fuel Economy -> Kilometres per Litre
+    distance = coerceNumber(convertDistance(distance, lastDistanceUnit, "km"));
+    fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, lastFuelEconomyUnit, "kmpl"));
+
+    if (!fuelEconomy) { return; }
+
+    var totalLitres = distance / fuelEconomy;
+    var totalCost = totalLitres * coerceNumber(fuelPrice);
+
+    $("#input-total-cost").val(formatNumber(totalCost));
+}
+
+function numericChanged(e) {
+    var previousValue = $(this).data("previous-value");
+    var newValue = $(this).val();
+
+    if (!newValue) {
+        $(this).val(previousValue);
+        return;
+    }
+
+    // Try to convert the new value into a number to make sure it's good
+    if (typeof newValue != "string") {
+        $(this).val(previousValue);
+        return;
+    }
+
+    // Remove commas from the number
+    newValue = formatNumber(coerceNumber(newValue));
+    $(this).val(newValue);
+}
+
+function formatNumber(val, locale = undefined, decimalPlaces = 2) {
+    if (!val) { return; }
+    decimalPlaces = decimalPlaces || 2;
+
+    var numberFormat = new Intl.NumberFormat(locale, 
+                                             { minimumFractionDigits: decimalPlaces, 
+                                               maximumFractionDigits: decimalPlaces });
+    
+    return numberFormat.format(val);
+}
+
+//#endregion
+
+//#region Request Functions
+
 function requestCurrencyConversion() {
     let req = {
         action: "requestCurrencyConversion"
@@ -229,8 +284,10 @@ function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize) {
     webSocket.send(JSON.stringify(req));
 }
 
+//#endregion
 
-//// RESPONSE FUNCTIONS ////
+//#region Response Functions
+
 function addNewMake(makeID, name) {
     let selectMake  = document.getElementById("select-make");
     let newOption   = document.createElement("option");
@@ -276,11 +333,14 @@ function addNewEngineSize(engineSize) {
     selectEngineSize.appendChild(newOption);
 }
 
-//// CLEAR OPTIONS ////
-// Defined last parameter first
+//#endregion
+
+//#region Clear Selection Functions
+// Define last selector function first
 // then each subsequent function
 // will call the previously
-// defined function
+// defined function, chaining them
+
 function clearEngineSizeOptions() {
     var selectEngineSize = $("#select-engine-size");
     selectEngineSize.empty();
@@ -318,6 +378,8 @@ function clearMakeOptions() {
     selectMake.empty();
     selectMake.append("<option value='' selected>Select a Make</option>")
 }
+
+//#endregion
 
 //// INCOMING WEBSOCKETS ////
 webSocket.onmessage = (msg) => {
@@ -359,6 +421,8 @@ webSocket.onmessage = (msg) => {
             break;
     }
 }
+
+//#region Selection Changed Events
 
 // Events for when a selection is changed
 $("#select-make").on("change", (e) => {
@@ -409,6 +473,10 @@ $("#select-fuel-type").on("change", (e) => {
     requestEngineSizes(makeID, modelID, year, fuelTypeID)
 })
 
+//#endregion
+
+//#region Parameter Changed Events
+
 // Once an engine size is selected we need 
 // to get the average fuel eco for city and
 // for motorway driving. The slider will be
@@ -458,7 +526,7 @@ $("#select-fuel-eco-unit").on("change", (e) => {
     lastFuelEconomyUnit = unitOfMeasurement;
 });
 
-// Store the original value when we focus on the field
+// Store the original value when we focus on a numeric field
 $(".numeric-2").on("focusin", function (e) {
     $(this).data("previous-value", $(this).val());
 });
@@ -473,6 +541,7 @@ $(".numeric-2").on("keydown", function (e) {
         return;
     }
 
+    // Only allow these keys
     if ((e.keyCode >=  48 && e.keyCode <=  57) || 
         (e.keyCode >=  96 && e.keyCode <= 105) || 
         (e.keyCode >= 112 && e.keyCode <= 123) ||
@@ -502,67 +571,17 @@ $(".numeric-2").on("keydown", function (e) {
 
     if (!curValue) { return; }
 
-    if (curValue.indexOf(".") > 0 && e.keyCode == 190) {
+    if (curValue.indexOf(".") > 0 && (e.keyCode == 190 || e.keyCode == 110)) {
         e.preventDefault();
     }
 });
-
-function calculateCostToDrive() {
-    var fuelPrice   = $("#input-fuel-price").val();
-    var distance    = $("#input-distance").val();
-    var fuelEconomy = $("#input-fuel-eco").val();
-
-    // Convert values into common units:
-    // 1. Distance     -> Kilometres
-    // 2. Fuel Economy -> Kilometres per Litre
-    distance = coerceNumber(convertDistance(distance, lastDistanceUnit, "km"));
-    fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, lastFuelEconomyUnit, "kmpl"));
-
-    if (!fuelEconomy) { return; }
-
-    var totalLitres = distance / fuelEconomy;
-    var totalCost = totalLitres * coerceNumber(fuelPrice);
-
-    $("#input-total-cost").val(formatNumber(totalCost));
-}
 
 // Recalculate cost if any of these fields change
 $(".calc-cost").on("change", function(e) {
     calculateCostToDrive();
 });
 
-function numericChanged(e) {
-    var previousValue = $(this).data("previous-value");
-    var newValue = $(this).val();
-
-    if (!newValue) {
-        $(this).val(previousValue);
-        return;
-    }
-
-    // Try to convert the new value into a number to make sure it's good
-    if (typeof newValue != "string") {
-        $(this).val(previousValue);
-        return;
-    }
-
-    // Remove commas from the number
-    newValue = formatNumber(coerceNumber(newValue));
-    $(this).val(newValue);
-}
-
-function formatNumber(val, locale = undefined, decimalPlaces = 2) {
-    if (!val) { return; }
-    decimalPlaces = decimalPlaces || 2;
-
-    var numberFormat = new Intl.NumberFormat(locale, 
-                                             { minimumFractionDigits: decimalPlaces, 
-                                               maximumFractionDigits: decimalPlaces });
-    
-    return numberFormat.format(val);
-}
-
-//$(".numeric-2").on("focusout", numericChanged);
+// Add the event handler to all elements with .numeric-2 
 $(".numeric-2").each( function() {
     $(this).on("change", numericChanged);
 });
@@ -599,7 +618,7 @@ $(".currency-selector").on("change", function(e) {
     if (currencyConversion) {
         // Get list of all currency holding fields and convert them
         $(".currency-field").each((k, v) => {
-            console.log(`(${v.id}) ${previousCurrency} ${v.value} -> ${newCurrency}`);
+            //console.log(`(${v.id}) ${previousCurrency} ${v.value} -> ${newCurrency}`);
             var curValue = v.value;
             var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
 
@@ -625,3 +644,5 @@ $(window).on("load", () => {
     // When we first load the page, re-apply any formatting
     $(".numeric-2").each(numericChanged);
 });
+
+//#endregion

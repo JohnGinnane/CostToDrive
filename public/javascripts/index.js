@@ -125,7 +125,34 @@ function convertDistance(curValue, curUnit, newUnit) {
 }
 
 function convertCurrency(curValue, curUnit, newUnit) {
+    if (!curValue) { return; }
+    if (!curUnit)  { return curValue; }
+    if (!newUnit)  { return curValue; }
+
+    curValue = coerceNumber(curValue);
+    curUnit = curUnit.trim().toUpperCase();
+    newUnit = newUnit.trim().toUpperCase();
+
+    console.log(curValue);
+    console.log(curUnit);
+    console.log(newUnit);
+    console.log(currencyConversion);
+
+    if (curUnit == newUnit)  { return curValue; }
+    if (!currencyConversion) { return; }
+    if (!currencyConversion.rates[curUnit] || !currencyConversion.rates[newUnit]) { return; }
     
+    var newValue = curValue;
+
+    console.log(`${curUnit} ${curValue} -> ${newUnit}`);
+    console.log(currencyConversion);
+
+    // Convert from curUnit to EUR
+    newValue = newValue / currencyConversion.rates[curUnit];
+    // Then convert from EUR to newUnit
+    newValue = newValue * currencyConversion.rates[newUnit];
+
+    return newValue;
 }
 
 function updateFuelEco(newValue) {
@@ -133,7 +160,9 @@ function updateFuelEco(newValue) {
         newValue = coerceNumber($("#input-fuel-eco").val());
     }
 
-    $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()).toFixed(2));
+    if (newValue) {
+        $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()).toFixed(2));
+    }
 }
 
 //// REQUEST FUNCTIONS ////
@@ -572,14 +601,18 @@ $(".currency-selector").on("change", function(e) {
     var newCurrency = $(this).val();
     var thisID = e.target.id;
     
-    console.log(`changing from ${previousCurrency} to ${newCurrency}`);
+    console.log(`changing  from ${previousCurrency} to ${newCurrency}`);
 
     if (currencyConversion) {
         // Get list of all currency holding fields and convert them
         $(".currency-field").each((k, v) => {
-            var curValue = $(this).val();
+            console.log(`finna change ${v.value} (${v.id})`);
+            var curValue = v.value;
             var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
-            v.value = newValue;
+
+            if (newValue) { 
+                v.value = formatNumber(newValue);
+            }
         });
     }
 

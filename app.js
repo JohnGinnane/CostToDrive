@@ -136,7 +136,7 @@ db.getCurrencyRates().then((res) => {
 
                     // Iterate over currencies and add to our rates
                     Object.keys(newCurrencyData.data).forEach(function(currency) {
-                        currencyConversion.rates[currency] = newCurrencyData.data[currency].value;
+                        currencyConversion.rates[currency.toUpperCase()] = newCurrencyData.data[currency].value;
                     });
 
                     // console.log("Our conversion object:");

@@ -117,7 +117,7 @@ async function getCurrencyRates() {
                       (err, row) => {
                         if (!err) {
                             result.last_updated_at = new Date(row.LastUpdated);
-                            result.rates[row.Currency] = row.Rate;
+                            result.rates[row.Currency.toUpperCase()] = row.Rate;
 
                             // Set the prime currency if rate was 1.0
                             if (row.Rate == 1 && result.prime_currency == "") {

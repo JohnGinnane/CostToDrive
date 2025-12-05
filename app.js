@@ -10,6 +10,7 @@ const fs         = require("fs");
 var indexRouter  = require('./routes/index');
 var usersRouter  = require('./routes/users');
 var db           = require("./db");
+var fuel         = require("./fuel");
 
 // Create default values config
 var config = {
@@ -152,6 +153,9 @@ db.getCurrencyRates().then((res) => {
         });
     }
 });
+
+// Get fuel prices
+fuel.getFuelPrice();
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));

@@ -465,10 +465,13 @@ $(".numeric-2").on("focusin", function (e) {
 
 // Format any fields that are "Numeric" to look like numbers
 $(".numeric-2").on("keydown", function (e) {
-    console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
 
     if (e.ctrlKey)  { return; }
-    if (e.shiftKey) { return; }
+    if (e.shiftKey || e.keyCode == 16 ) { 
+        e.preventDefault();
+        return;
+    }
 
     if ((e.keyCode >=  48 && e.keyCode <=  57) || 
         (e.keyCode >=  96 && e.keyCode <= 105) || 

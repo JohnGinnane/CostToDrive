@@ -133,19 +133,11 @@ function convertCurrency(curValue, curUnit, newUnit) {
     curUnit = curUnit.trim().toUpperCase();
     newUnit = newUnit.trim().toUpperCase();
 
-    console.log(curValue);
-    console.log(curUnit);
-    console.log(newUnit);
-    console.log(currencyConversion);
-
     if (curUnit == newUnit)  { return curValue; }
     if (!currencyConversion) { return; }
     if (!currencyConversion.rates[curUnit] || !currencyConversion.rates[newUnit]) { return; }
     
     var newValue = curValue;
-
-    console.log(`${curUnit} ${curValue} -> ${newUnit}`);
-    console.log(currencyConversion);
 
     // Convert from curUnit to EUR
     newValue = newValue / currencyConversion.rates[curUnit];
@@ -473,7 +465,7 @@ $(".numeric-2").on("focusin", function (e) {
 
 // Format any fields that are "Numeric" to look like numbers
 $(".numeric-2").on("keydown", function (e) {
-    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+    console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
 
     if (e.ctrlKey)  { return; }
     if (e.shiftKey) { return; }
@@ -492,6 +484,7 @@ $(".numeric-2").on("keydown", function (e) {
          e.keyCode ==  44 ||  // Print Screen
          e.keyCode ==  46 ||  // Delete key
          e.keyCode == 109 ||  // Num pad minus symbol
+         e.keyCode == 110 ||  // Num pad decimal place
          e.keyCode == 172 ||  // Num pad minus symbol
          e.keyCode == 188 ||  // Comma
          e.keyCode == 190 ) { // Decimal place
@@ -511,8 +504,7 @@ $(".numeric-2").on("keydown", function (e) {
     }
 });
 
-// Recalculate cost if any of these fields change
-$(".calc-cost").on("change", function(e) {
+function calculateCostToDrive() {
     var fuelPrice   = $("#input-fuel-price").val();
     var distance    = $("#input-distance").val();
     var fuelEconomy = $("#input-fuel-eco").val();
@@ -525,21 +517,18 @@ $(".calc-cost").on("change", function(e) {
 
     if (!fuelEconomy) { return; }
 
-    console.log(distance);
-    console.log(fuelEconomy);
-
     var totalLitres = distance / fuelEconomy;
     var totalCost = totalLitres * coerceNumber(fuelPrice);
-    console.log(totalCost);
 
     $("#input-total-cost").val(formatNumber(totalCost));
+}
 
-    console.log("Calculating cost!");
+// Recalculate cost if any of these fields change
+$(".calc-cost").on("change", function(e) {
+    calculateCostToDrive();
 });
 
 function numericChanged(e) {
-    console.log("numeric-changed-start");
-
     var previousValue = $(this).data("previous-value");
     var newValue = $(this).val();
 
@@ -557,8 +546,6 @@ function numericChanged(e) {
     // Remove commas from the number
     newValue = formatNumber(coerceNumber(newValue));
     $(this).val(newValue);
-    
-    console.log("numeric-changed-end");
 }
 
 function formatNumber(val, locale = undefined, decimalPlaces = 2) {
@@ -597,16 +584,19 @@ $(".currency-selector").on("focusin", function(e) {
 });
 
 $(".currency-selector").on("change", function(e) {
-    var previousCurrency = $(this).data("previous-value");
-    var newCurrency = $(this).val();
-    var thisID = e.target.id;
-    
-    console.log(`changing  from ${previousCurrency} to ${newCurrency}`);
+    var previousCurrency = $(this).data("previous-value").trim().toUpperCase();
+    var newCurrency      = $(this).val().trim().toUpperCase();
+    var thisID           = e.target.id;
+
+    if (previousCurrency == newCurrency) { return;  }
+
+    // Set our previous currency
+    $(this).data("previous-value", newCurrency);
 
     if (currencyConversion) {
         // Get list of all currency holding fields and convert them
         $(".currency-field").each((k, v) => {
-            console.log(`finna change ${v.value} (${v.id})`);
+            console.log(`(${v.id}) ${previousCurrency} ${v.value} -> ${newCurrency}`);
             var curValue = v.value;
             var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
 
@@ -622,6 +612,8 @@ $(".currency-selector").on("change", function(e) {
             v.value = newCurrency;
         }
     });
+
+    calculateCostToDrive();
 });
 
 $(window).on("load", () => {

@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS [Vehicles] (
 	   CONSTRAINT  [FK_SourceID] FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]));
 
 /* 2025-12-02 - Added currency log table */
-CREATE TABLE [CurrencyConversionLog] (
+CREATE TABLE IF NOT EXISTS [CurrencyConversionLog] (
        [ID]           INTEGER,
        [SourceID]     INTEGER,
        [Batch]        INTEGER      NOT NULL, -- This will be a number that tied multiple entries together
@@ -61,3 +61,20 @@ CREATE TABLE [CurrencyConversionLog] (
 	   
        PRIMARY KEY ([ID] AUTOINCREMENT),
 	   CONSTRAINT  [FK_SourceID] FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]));
+
+/* 2025-12-06 - Added fuel price log table */
+CREATE TABLE CREATE TABLE IF NOT EXISTS [FuelPriceLog] (
+       [ID]            INTEGER     NOT NULL,
+       [SourceID]      INTEGER         NULL,
+       [Batch]         INTEGER     NOT NULL,  -- In case we log multiple items at the same time from one source
+       [Retrieved]     INTEGER     NOT NULL   DEFAULT CURRENT_TIMESTAMP,
+       [Timestamp]     TIMESTAMP       NULL,  -- The timestamp of the data
+       [Currency]      TEXT        NOT NULL,  -- 3 letter code, e.g. EUR
+       [CountryCode]   TEXT        NOT NULL,  -- 3 letter code, e.g. IRL
+	[FuelID]        INTEGER     NOT NULL,
+       [Value]         REAL        NOT NULL,  -- Cost of 1 litre of fuel
+	   
+       PRIMARY KEY ([ID] AUTOINCREMENT),
+	CONSTRAINT FOREIGN KEY ([SourceID]) REFERENCES [Sources]([ID]),
+	CONSTRAINT FOREIGN KEY ([FuelID])   REFERENCES [FuelTypes]([ID])
+);

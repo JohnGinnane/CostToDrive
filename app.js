@@ -155,7 +155,8 @@ db.getCurrencyRates().then((res) => {
 });
 
 // Get fuel prices
-fuel.getFuelPrice();
+//fuel.getFuelPrice("ireland");
+fuel.listCountries();
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));

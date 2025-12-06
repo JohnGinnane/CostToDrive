@@ -137,7 +137,6 @@ async function getCurrencyRates() {
     });
 }
 
-
 module.exports = {
     conn: conn,
     getCurrencyRates:       getCurrencyRates,

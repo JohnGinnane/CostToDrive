@@ -415,9 +415,14 @@ async function getFuelPrices(ws, countryCode) {
             } else {
                 fetchNewPrices = true;
             }
-            
+
             if (!fetchNewPrices) {
-                resolve(fuelPrices);
+                ws.send(JSON.stringify({
+                    type: "fuelPrices",
+                    data: fuelPrices
+                }));
+
+                resolve();
                 return;
             } else {
                 // If not DB then scrape webpage
@@ -433,6 +438,9 @@ async function getFuelPrices(ws, countryCode) {
                         type: "fuelPrices",
                         data: newFuelPrices
                     }));
+
+                    resolve();
+                    return;
                 }).catch((err) => {
                     console.log("Unable to get fuel prices from webpage");
                     reject(err);

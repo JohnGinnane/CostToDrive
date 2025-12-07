@@ -343,6 +343,33 @@ function addNewEngineSize(engineSize) {
     selectEngineSize.appendChild(newOption);
 }
 
+function updateFuelPrice(fuelPrices) {
+    console.log(fuelPrices);
+
+    var selectedFuelTypeID = getSelectedValue($("#select-fuel-type"));
+    var selectedCurrency   = getSelectedValue($("#select-price-currency"));
+    
+    if (!fuelPrices) {
+        return;
+    }
+
+    Object.keys(fuelPrices.prices).forEach((fuelName) => {
+        var fuelPrice = fuelPrices.prices[fuelName];
+        console.log(fuelPrice);
+
+        if (!fuelPrice) { return; }
+        if (!fuelPrice.fuelID) { return; }
+
+        if (fuelPrice.fuelID == selectedFuelTypeID) {
+            var fuelCurrency = fuelPrice.currency;
+            var fuelPrice    = Number(fuelPrice.price);
+
+            fuelPrice = convertCurrency(fuelPrice, fuelCurrency, selectedCurrency);
+            $("#input-fuel-price").val(formatNumber(fuelPrice));
+        }
+    });
+}
+
 //#endregion
 
 //#region Clear Selection Functions
@@ -394,6 +421,7 @@ function clearMakeOptions() {
 //// INCOMING WEBSOCKETS ////
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
+    // console.log(resp);
 
     switch (resp.type.trim().toLowerCase()) {
         case "make":
@@ -426,9 +454,13 @@ webSocket.onmessage = (msg) => {
 
         case "currencyconversion":
             currencyConversion = resp.data;
+            break;
 
         case "fuelprices":
-            console.log(resp);
+            // When we receive fuel data, we need to check what selected
+            // fuel type, and currency, and then place value into field
+            updateFuelPrice(resp.data);
+            break;
 
         default:
             break;

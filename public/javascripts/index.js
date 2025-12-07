@@ -284,10 +284,11 @@ function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize) {
     webSocket.send(JSON.stringify(req));
 }
 
-function requestFuelPrices(countryCode) {
+function requestFuelPrices(countryCode, fuelID) {
     let req = {
-        action: "requestFuelPrices",
-        countryCode: countryCode
+        action:      "requestFuelPrices",
+        countryCode: countryCode,
+        fuelID:      fuelID
     }
 
     webSocket.send(JSON.stringify(req));
@@ -651,11 +652,15 @@ $(".currency-selector").on("change", function(e) {
 $("#button-get-fuel-price").on("click", function(e) {
     // Check the country, ask server to get fuel price
     var countryCode = getSelectedValue("#select-country");
+    var fuelID      = getSelectedValue("#select-fuel-type");
+
+    console.log(countryCode);
+    console.log(fuelID);
 
     if (!countryCode) { return; }
 
     countryCode.trim().toUpperCase();
-    requestFuelPrices(countryCode);
+    requestFuelPrices(countryCode, fuelID);
 });
 
 $(window).on("load", () => {

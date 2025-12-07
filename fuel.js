@@ -101,14 +101,14 @@ async function getFuelPrice(countryCode) {
                 }
             }
 
-            console.log(`Prices as of ${dateRetrieved.toISOString().slice(0, 10)}:`);
+            // console.log(`Prices as of ${dateRetrieved.toISOString().slice(0, 10)}:`);
 
-            var i = 0;
+            // var i = 0;
 
-            while (i < headers.length && i < data.length) {
-                console.log(`${headers[i]}\t - ${data[i]}`);
-                i++;
-            }
+            // while (i < headers.length && i < data.length) {
+            //     console.log(`${headers[i]}\t - ${data[i]}`);
+            //     i++;
+            // }
 
             return resolve({
                 dateRetrieved: dateRetrieved,

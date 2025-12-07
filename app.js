@@ -392,8 +392,10 @@ function getCurrencyConversion(ws) {
     }));
 }
 
-function getFuelPrices(ws, countryCode, currency) {
+function getFuelPrices(ws, countryCode, fuelID, currency) {
     // Check if we have the price in the database first
+    db.getFuelPrices(countryCode, fuelID);
+
     // if not then go get it from our source
     fuel.getFuelPrice(countryCode).then((res) => {
         console.log(res);
@@ -459,9 +461,11 @@ webSocket.on("connection", function connection(ws) {
 
             case "requestfuelprices":
                 var countryCode = req.countryCode;
+                var fuelID      = req.fuelID;
+
                 if (!countryCode) { return; }
 
-                getFuelPrices(ws, countryCode);
+                getFuelPrices(ws, countryCode, fuelID);
                 break;
 
             default:

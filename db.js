@@ -1,3 +1,5 @@
+const fuel = require("./fuel");
+
 // SQLite server
 const sqlite3 = require("sqlite3").verbose()
 
@@ -137,9 +139,63 @@ async function getCurrencyRates() {
     });
 }
 
+async function getFuelPrices(countryCode, fuelID) {
+    var result = {
+        last_updated_at: null,
+        fuelID:          0,
+        prices:          { }
+    };
+
+    var sql = `SELECT MAX([FPL].[Timestamp]) AS [LastUpdated],
+                      [FPL].[FuelID]         AS [FuelID],
+                      [FPL].[Currency]       AS [Currency],
+                      AVG([FPL].[Value])     AS [Price]
+                 FROM [FuelPriceLog] AS [FPL]
+                WHERE [FPL].[CountryCode] = $CountryCode
+                  AND [FPL].[FuelID]      = $FuelID
+                      GROUP BY [FPL].[FuelID],
+                               [FPL].[Currency]
+                      ORDER BY [LastUpdated] ASC,
+                               [Currency]    ASC`
+
+    var params = {
+        $CountryCode: countryCode,
+        $FuelID:      fuelID
+    };
+
+    console.log(sql);
+    console.log(params);
+    
+    return new Promise((resolve, reject) => {
+        conn.serialize(() => {
+            conn.each(sql,
+                      params,
+                      (err, row) => {
+                        if (!err) {
+                            result.last_updated_at = new Date(row.LastUpdated);
+                            result.fuelID = row.FuelID;
+
+                            prices[row.Currency.toUpperCase()] = row.Price;
+                        } else {
+                            // continue despite error during each iteration
+                            console.error(err);
+                        }
+                      },
+                      (err) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(result);
+                        }
+            });
+        });
+    });
+}
+
 module.exports = {
     conn:                   conn,
     getCurrencyRates:       getCurrencyRates,
     getSourceID:            getSourceID,
-    insertNewCurrencyRates: insertNewCurrencyRates
+    insertNewCurrencyRates: insertNewCurrencyRates,
+    getFuelPrices:          getFuelPrices
 };

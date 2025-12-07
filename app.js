@@ -392,14 +392,30 @@ function getCurrencyConversion(ws) {
     }));
 }
 
-function getFuelPrices(ws, countryCode, fuelID, currency) {
-    // Check if we have the price in the database first
-    db.getFuelPrices(countryCode, fuelID);
+async function getFuelPrices(ws, countryCode, fuelID) {
+    return new Promise((resolve, reject) => {
+        // Do we have the fuel prices locally?
+        if (fuel.priceLog) {
+            resolve(fuel.priceLog);
+            return;
+        }
 
-    // if not then go get it from our source
-    fuel.getFuelPrice(countryCode).then((res) => {
-        console.log(res);
-    })
+        // Check if we have the price in the database second
+        db.getFuelPrices(countryCode, fuelID).then((res) => {
+            if (res) {
+                resolve(res);
+                return;
+            }
+
+            // If not DB then scrape webpage
+            fuel.getFuelPrice(countryCode).then((res) => {
+                console.log(res);
+            });
+        }).catch((err) => {
+            console.log("Unable to get fuel prices from database");
+            console.error(err);
+        });
+    });
 }
 
 webSocket.on("connection", function connection(ws) {

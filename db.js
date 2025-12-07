@@ -41,8 +41,8 @@ async function insertNewCurrencyRates(currencyConversion, sourceID) {
     //     }
     // }
 
-    console.log("Inserting the following:");
-    console.log(currencyConversion);
+    // console.log("Inserting the following:");
+    // console.log(currencyConversion);
 
     // Convert our object into a select statement that we can 
     // use to insert into the database
@@ -139,32 +139,39 @@ async function getCurrencyRates() {
     });
 }
 
-async function getFuelPrices(countryCode, fuelID) {
+async function insertNewFuelPrices(fuelPrices, sourceID) {
+
+}
+
+async function getFuelPrices(countryCode) {
     var result = {
         last_updated_at: null,
-        fuelID:          0,
+        country_code:    countryCode,
         prices:          { }
     };
 
     var sql = `SELECT MAX([FPL].[Timestamp]) AS [LastUpdated],
                       [FPL].[FuelID]         AS [FuelID],
+                      [FT].[Description]     AS [FuelName],
                       [FPL].[Currency]       AS [Currency],
                       AVG([FPL].[Value])     AS [Price]
                  FROM [FuelPriceLog] AS [FPL]
+                      LEFT OUTER JOIN [FuelTypes] AS [FT]
+                                   ON [FT].[ID] = [FPL].[FuelID]
                 WHERE [FPL].[CountryCode] = $CountryCode
-                  AND [FPL].[FuelID]      = $FuelID
                       GROUP BY [FPL].[FuelID],
+                               [FT].[Description],
                                [FPL].[Currency]
                       ORDER BY [LastUpdated] ASC,
-                               [Currency]    ASC`
+                               [Currency]    ASC,
+                               [FuelID]      ASC`
 
     var params = {
-        $CountryCode: countryCode,
-        $FuelID:      fuelID
+        $CountryCode: countryCode
     };
 
-    console.log(sql);
-    console.log(params);
+    // console.log(sql);
+    // console.log(params);
     
     return new Promise((resolve, reject) => {
         conn.serialize(() => {
@@ -173,9 +180,19 @@ async function getFuelPrices(countryCode, fuelID) {
                       (err, row) => {
                         if (!err) {
                             result.last_updated_at = new Date(row.LastUpdated);
-                            result.fuelID = row.FuelID;
+                            var fuelName = "Unknown";
 
-                            prices[row.Currency.toUpperCase()] = row.Price;
+                            if (row.FuelName) {
+                                if (row.FuelName.length > 0) {
+                                    fuelName = row.FuelName;
+                                }
+                            }
+
+                            result.prices[fuelName] = {
+                                currency: row.Currency || "",
+                                fuelID:   row.FuelID   || "",
+                                price:    row.Price    || 0.0
+                            };
                         } else {
                             // continue despite error during each iteration
                             console.error(err);

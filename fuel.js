@@ -17,6 +17,8 @@ const countryURLs = {
     }
 }
 
+var priceLog = null;
+
 async function getFuelPrice(countryCode) {
     if (!countryCode) { return; }
     var country = countryURLs[countryCode.trim().toUpperCase()];
@@ -24,7 +26,7 @@ async function getFuelPrice(countryCode) {
     console.log(`Fetching prices for ${country.Name}`)
 
     // "1.23 EUR/L"
-    const regexPrice = new RegExp("([0-9.]+)");
+    const regexPrice = new RegExp("([0-9.]+) ([a-zA-Z]+)\/L");
 
     // "Last prices from 05.12.2025"
     const regexDate  = new RegExp("Last prices from ([0-9.]+)");
@@ -32,12 +34,12 @@ async function getFuelPrice(countryCode) {
     return new Promise((resolve, reject) => {
         axios.get(country.URL).then((resp) => {
             const $ = cheerio.load(resp.data);
-            const headers = [];
-            const data = [];
-            var dateRetrieved = new Date();
+            const headers    = [];
+            const data       = [];
+            const currencies = [];
 
-            var fuelTable = null;
-            
+            var Timestamp = null;
+
             // We're looking for the table that shares a div node with 
             // <a id="prices">
             // $("table").find(".table.table-striped.table-hover");
@@ -67,23 +69,34 @@ async function getFuelPrice(countryCode) {
             // Then find values
             $(tableBody).find("tr").find("td").each((k, v) => {
                 var thisPrice = "0";
+                var thisCurrency = "?";
 
                 // Try to find the first span in each td
                 var span = $(v).first("span");
 
                 if (span) {
-                    var fuelPrice = $(span).text();
+                    var fuelPrice = $(span).text().trim();
+
+                    // console.log(`Raw Text: ${fuelPrice}`);
 
                     var priceMatches = fuelPrice.match(regexPrice);
+                    
+                    // console.log("regex: ");
+                    // console.log(priceMatches);
                     
                     if (priceMatches) {
                         if (priceMatches.length > 1) {
                             thisPrice = priceMatches[1];
                         }
+
+                        if (priceMatches.length > 2) {
+                            thisCurrency = priceMatches[2];
+                        }
                     }
                 }
 
-                data.push(thisPrice);
+                data.push(Number(thisPrice));
+                currencies.push(thisCurrency);
             });
 
             // Try to find the date of this information
@@ -97,7 +110,7 @@ async function getFuelPrice(countryCode) {
                     var dateParts = dateMatches[1].split(".");
 
                     // why the CHRIST is month index 0??????????????????????????????????
-                    dateRetrieved = new Date(dateParts[2], Number(dateParts[1])-1, dateParts[0]);
+                    Timestamp = new Date(dateParts[2], Number(dateParts[1])-1, dateParts[0]);
                 }
             }
 
@@ -105,16 +118,36 @@ async function getFuelPrice(countryCode) {
 
             // var i = 0;
 
-            // while (i < headers.length && i < data.length) {
-            //     console.log(`${headers[i]}\t - ${data[i]}`);
+            // while (i < headers.length) {
+            //     console.log(`${headers[i]}\t - ${currencies[i]} ${data[i]}`);
             //     i++;
             // }
+            
+            // Format into our fuel object
+            var result = {
+                last_updated_at: Timestamp || "",
+                country_code:    countryCode,
+                prices: { }
+            };
 
-            return resolve({
-                dateRetrieved: dateRetrieved,
-                headers: headers,
-                data: data
-            });
+            var i = 0; 
+
+            while (i < headers.length && i < data.length && i < currencies.length) {
+                var fuelName = headers[i].toLowerCase();
+
+                result.prices[fuelName] = {
+                    currency: currencies[i],
+                    fuelID:   -1,
+                    price:    data[i]
+                };
+
+                i++;
+            }
+
+            // console.log("Parsed fuel prices: ");
+            // console.log(result);
+
+            return resolve(result);
         }).catch((err) => {
             console.log("Error fetching page:");
             console.error(err.message);
@@ -128,8 +161,8 @@ async function listCountries() {
     
     axios.get(url).then((resp) => {
         const $ = cheerio.load(resp.data);
-        console.log(resp.status);
-        console.log(resp.statusText);
+        // console.log(resp.status);
+        // console.log(resp.statusText);
 
         $("ul").find("li").find("a").each((k, v) => {
             var countryURL = $(v).attr("href");
@@ -146,6 +179,7 @@ async function listCountries() {
 }
 
 module.exports = {
-    getFuelPrice: getFuelPrice,
-    listCountries: listCountries
+    getFuelPrice:  getFuelPrice,
+    listCountries: listCountries,
+    priceLog:      priceLog
 }

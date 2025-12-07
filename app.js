@@ -392,6 +392,14 @@ function getCurrencyConversion(ws) {
     }));
 }
 
+function getFuelPrices(ws, countryCode, currency) {
+    // Check if we have the price in the database first
+    // if not then go get it from our source
+    fuel.getFuelPrice(countryCode).then((res) => {
+        console.log(res);
+    })
+}
+
 webSocket.on("connection", function connection(ws) {
     ws.on("message", function message(req) {
         req = JSON.parse(req);
@@ -447,6 +455,13 @@ webSocket.on("connection", function connection(ws) {
 
             case "requestcurrencyconversion":
                 getCurrencyConversion(ws);
+                break;
+
+            case "requestfuelprices":
+                var countryCode = req.countryCode;
+                if (!countryCode) { return; }
+
+                getFuelPrices(ws, countryCode);
                 break;
 
             default:

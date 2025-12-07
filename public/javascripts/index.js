@@ -284,6 +284,15 @@ function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize) {
     webSocket.send(JSON.stringify(req));
 }
 
+function requestFuelPrices(countryCode) {
+    let req = {
+        action: "requestFuelPrices",
+        countryCode: countryCode
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
 //#endregion
 
 //#region Response Functions
@@ -636,6 +645,17 @@ $(".currency-selector").on("change", function(e) {
     });
 
     calculateCostToDrive();
+});
+
+// Request Fuel Price for Country
+$("#button-get-fuel-price").on("click", function(e) {
+    // Check the country, ask server to get fuel price
+    var countryCode = getSelectedValue("#select-country");
+
+    if (!countryCode) { return; }
+
+    countryCode.trim().toUpperCase();
+    requestFuelPrices(countryCode);
 });
 
 $(window).on("load", () => {

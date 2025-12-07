@@ -19,7 +19,7 @@ const countryURLs = {
 
 async function getFuelPrice(countryCode) {
     if (!countryCode) { return; }
-    country = countryURLs[country.trim().toUpperCase()];
+    var country = countryURLs[countryCode.trim().toUpperCase()];
 
     console.log(`Fetching prices for ${country.Name}`)
 
@@ -29,43 +29,67 @@ async function getFuelPrice(countryCode) {
     // "Last prices from 05.12.2025"
     const regexDate  = new RegExp("Last prices from ([0-9.]+)");
 
-    axios.get(country.URL).then((resp) => {
-        const $ = cheerio.load(resp.data);
-        const headers = [];
-        const data = [];
-        var dateRetrieved = new Date();
-        
-        // Find headers first
-        $("tbody").find("tr").find("th").each((k, v) => {
-            var fuelType = $(v).text().trim().toLowerCase();
+    return new Promise((resolve, reject) => {
+        axios.get(country.URL).then((resp) => {
+            const $ = cheerio.load(resp.data);
+            const headers = [];
+            const data = [];
+            var dateRetrieved = new Date();
 
-            // Convert to our lingo
-            if (fuelType == "unleaded") {
-                fuelType = "petrol"
-            }
-
-            headers.push(fuelType);
-        });
-
-        // Then find values
-        $("tbody").find("tr").find("span").each((k, v) => {
-            var fuelPrice = $(v).text();
-
-            var priceMatches = fuelPrice.match(regexPrice);
-            var thisPrice = "0";
+            var fuelTable = null;
             
-            if (priceMatches) {
-                if (priceMatches.length > 1) {
-                    thisPrice = priceMatches[1];
-                }
+            // We're looking for the table that shares a div node with 
+            // <a id="prices">
+            // $("table").find(".table.table-striped.table-hover");
+
+            const anchorPrices = $("a[id=prices]");
+
+            if (!anchorPrices) {
+                reject("Unable to locate prices");
+                return;
             }
 
-            data.push(thisPrice);
-        });
+            const divParent = anchorPrices.parent();
+            const tableBody = divParent.children("table").first().find("tbody").first();
 
-        // Try to find the date of this information
-        $("h4").each((k, v) => {
-            var dateText = $(v).text();
+            // Find headers first
+            $(tableBody).find("tr").find("th").each((k, v) => {
+                var fuelType = $(v).text().trim().toLowerCase();
+
+                // Convert to our lingo
+                if (fuelType == "unleaded") {
+                    fuelType = "petrol"
+                }
+
+                headers.push(fuelType);
+            });
+
+            // Then find values
+            $(tableBody).find("tr").find("td").each((k, v) => {
+                var thisPrice = "0";
+
+                // Try to find the first span in each td
+                var span = $(v).first("span");
+
+                if (span) {
+                    var fuelPrice = $(span).text();
+
+                    var priceMatches = fuelPrice.match(regexPrice);
+                    
+                    if (priceMatches) {
+                        if (priceMatches.length > 1) {
+                            thisPrice = priceMatches[1];
+                        }
+                    }
+                }
+
+                data.push(thisPrice);
+            });
+
+            // Try to find the date of this information
+            const h4Timestamp = divParent.children("h4").first();
+
+            var dateText = $(h4Timestamp).text();
             var dateMatches = dateText.match(regexDate);
 
             if (dateMatches) {
@@ -76,20 +100,25 @@ async function getFuelPrice(countryCode) {
                     dateRetrieved = new Date(dateParts[2], Number(dateParts[1])-1, dateParts[0]);
                 }
             }
-        });
 
-        console.log(`Prices as of ${dateRetrieved.toISOString().slice(0, 10)}:`);
+            console.log(`Prices as of ${dateRetrieved.toISOString().slice(0, 10)}:`);
 
-        var i = 0;
+            var i = 0;
 
-        while (i < headers.length && i < data.length) {
-            console.log(`${headers[i]}\t - ${data[i]}`);
-            i++;
-        }
+            while (i < headers.length && i < data.length) {
+                console.log(`${headers[i]}\t - ${data[i]}`);
+                i++;
+            }
 
-    }).catch((err) => {
-        console.log("Error fetching page:");
-        console.error(err.message);
+            return resolve({
+                dateRetrieved: dateRetrieved,
+                headers: headers,
+                data: data
+            });
+        }).catch((err) => {
+            console.log("Error fetching page:");
+            console.error(err.message);
+        });        
     });
 }
 

@@ -19,6 +19,11 @@ async function getSourceID(URL) {
     return new Promise((resolve, reject) => {
         conn.get(sql, params, function(err, res) {
             if (!err) {
+                if (!res) { 
+                    reject("Now data returned");
+                    return;
+                }
+
                 resolve({
                     ID: res.ID,
                     URL: URL,
@@ -77,8 +82,8 @@ async function insertNewCurrencyRates(currencyConversion, sourceID) {
                   ( SELECT ? AS [ID] ) AS [Source],
                   (
                    ${sql}
-                  ) AS [NewRates],
-                  ( SELECT MAX([CCL].[Batch]) AS [LastBatch]
+                  ) AS [NewRates]
+                  ( SELECT IFNULL(MAX([CCL].[Batch]), 0) AS [LastBatch]
                       FROM [CurrencyConversionLog] AS [CCL]
                            LIMIT 1 ) AS [CCL]`;
 
@@ -139,8 +144,105 @@ async function getCurrencyRates() {
     });
 }
 
-async function insertNewFuelPrices(fuelPrices, sourceID) {
+async function getFuelTypes() {
+    var sql = `SELECT [FT].[ID],
+                      [FT].[Description] AS [Name]
+                 FROM [FuelTypes] AS [FT]`
 
+    var result = { };
+
+    return new Promise((resolve, reject) => {
+        conn.serialize(() => {
+            conn.each(sql,
+                    (err, row) => {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+
+                        if (!row) { return; }
+
+                        var Name = "";
+                        
+                        if (row.Name) {
+                            if (row.Name.length > 0) {
+                                Name = row.Name;
+                            }
+                        }
+                        
+                        result[Number(row.ID)] = Name.trim();
+                    },
+                    (err) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+
+                        resolve(result);
+                        return;
+                    }
+            )
+        });
+    });
+}
+
+async function insertNewFuelPrices(fuelPrices, sourceID) {
+    var sql = "";
+    var params = [
+        fuelPrices.last_updated_at || "NULL",
+        fuelPrices.country_code    || "NULL",
+        sourceID                   || "NULL"
+    ];
+
+    Object.keys(fuelPrices.prices).forEach(function(newPrice) {
+        var price = fuelPrices.prices[newPrice];
+
+        if (newPrice.fuelID <= 0) { return; }
+
+        if (sql !== "") {
+            sql += " UNION ALL\n        ";
+        }
+
+        sql = sql + `SELECT ? AS [Currency], ? AS [FuelID], ? AS [Price]`;
+
+        params.push(price.currency, Number(price.fuelID), Number(price.price));
+    });
+
+    sql = `
+INSERT INTO [FuelPriceLog] (
+       [SourceID],
+       [Batch],
+       [Timestamp],
+       [CountryCode],
+       [Currency],
+       [FuelID],
+       [Value])
+SELECT [Source].[ID]          AS [SourceID],
+       [FPL].[LastBatch] + 1  AS [Batch],
+       [Meta].[LastUpdated]   AS [Timestmap],
+       [Meta].[CountryCode]   AS [CountryCode],
+       [NewPrices].[Currency] AS [Currency],
+       [NewPrices].[FuelID]   AS [FuelID],
+       [NewPrices].[Price]    AS [Price]
+  FROM ( SELECT ? AS [LastUpdated],
+                ? AS [CountryCode] ) AS [Meta],
+       ( SELECT ? AS [ID])           AS [Source],
+       ( SELECT IFNULL(MAX([FPL].[Batch]), 0) AS [LastBatch]
+           FROM [FuelPriceLog] AS [FPL]
+                LIMIT 1 ) AS [FPL],
+       (
+        ${sql}
+       ) AS [NewPrices]`;
+    
+    return new Promise((resolve, reject) => {
+        conn.all(sql, params, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
 }
 
 async function getFuelPrices(countryCode) {
@@ -180,11 +282,13 @@ async function getFuelPrices(countryCode) {
                       (err, row) => {
                         if (!err) {
                             result.last_updated_at = new Date(row.LastUpdated);
-                            var fuelName = "Unknown";
+                            result.country_code = countryCode;
+
+                            var fuelName = "unknown";
 
                             if (row.FuelName) {
                                 if (row.FuelName.length > 0) {
-                                    fuelName = row.FuelName;
+                                    fuelName = row.FuelName.trim().toLowerCase();
                                 }
                             }
 
@@ -214,5 +318,7 @@ module.exports = {
     getCurrencyRates:       getCurrencyRates,
     getSourceID:            getSourceID,
     insertNewCurrencyRates: insertNewCurrencyRates,
-    getFuelPrices:          getFuelPrices
+    getFuelTypes:           getFuelTypes,
+    getFuelPrices:          getFuelPrices,
+    insertNewFuelPrices:    insertNewFuelPrices
 };

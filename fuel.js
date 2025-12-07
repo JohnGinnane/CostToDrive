@@ -1,7 +1,10 @@
-const http      = require("node:http");
-const https     = require("node:https");
-const axios     = require('axios');
-const cheerio   = require('cheerio');
+const http           = require("node:http");
+const https          = require("node:https");
+const axios          = require('axios');
+const cheerio        = require('cheerio');
+
+const webpageBaseURL = "https://www.mylpg.eu/";
+var webpageSource  = null;
 
 const countryURLs = {
     IRL: {
@@ -17,7 +20,54 @@ const countryURLs = {
     }
 }
 
-var priceLog = null;
+var fuelTypes = { };
+
+async function init(db) {
+    db.getFuelTypes().then((res) => {
+        fuelTypes = res;
+        console.log(fuelTypes);
+    }).catch((err) => {
+        console.log("Error fetching fuel types!");
+        console.error(err);
+    })
+
+    db.getSourceID(webpageBaseURL).then((result) => {
+        if (result) {
+            webpageSource = result;
+        }
+    }).catch((err) => {
+        console.log(`Unable to find souce ID for ${webpageBaseURL}`);
+        console.error(err);
+    });
+}
+
+function webpageSourceID() {
+    return webpageSource.ID;
+}
+
+function NameToID(name) {
+    if (!name)             { return null; }
+    if ( name.length <= 0) { return null; }
+    
+    name = name.trim().toLowerCase();
+    result = null;
+
+    Object.keys(fuelTypes).forEach((fuelType) => {
+        if (fuelTypes[fuelType].trim().toLowerCase() == name && !result) {
+            result = fuelType;
+        }
+    });
+
+    return Number(result);
+}
+
+function IDToName(ID) {
+    if (!ID) { return ""; }
+    
+    if (!fuelTypes[ID]) { return ""; }
+
+    return fuelTypes[ID].trim();
+}
 
 async function getFuelPrice(countryCode) {
     if (!countryCode) { return; }
@@ -133,11 +183,11 @@ async function getFuelPrice(countryCode) {
             var i = 0; 
 
             while (i < headers.length && i < data.length && i < currencies.length) {
-                var fuelName = headers[i].toLowerCase();
+                var fuelName = headers[i]
 
                 result.prices[fuelName] = {
                     currency: currencies[i],
-                    fuelID:   -1,
+                    fuelID:   NameToID(fuelName),
                     price:    data[i]
                 };
 
@@ -179,7 +229,11 @@ async function listCountries() {
 }
 
 module.exports = {
-    getFuelPrice:  getFuelPrice,
-    listCountries: listCountries,
-    priceLog:      priceLog
+    init:            init,
+    getFuelPrice:    getFuelPrice,
+    listCountries:   listCountries,
+    fuelTypes:       fuelTypes,
+    IDToName:        IDToName,
+    NameToID:        NameToID,
+    webpageSourceID: webpageSourceID
 }

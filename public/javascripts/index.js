@@ -427,6 +427,9 @@ webSocket.onmessage = (msg) => {
         case "currencyconversion":
             currencyConversion = resp.data;
 
+        case "fuelprices":
+            console.log(resp);
+
         default:
             break;
     }

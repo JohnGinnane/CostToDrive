@@ -53,6 +53,9 @@ try {
 
 log("config done");
 
+// Init other components
+fuel.init(db);
+
 var app = express();
 
 // view engine setup
@@ -153,10 +156,6 @@ db.getCurrencyRates().then((res) => {
         });
     }
 });
-
-// Get fuel prices
-//fuel.getFuelPrice("ireland");
-//fuel.listCountries();
 
 // Add Bootstrap
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
@@ -392,28 +391,56 @@ function getCurrencyConversion(ws) {
     }));
 }
 
-async function getFuelPrices(ws, countryCode, fuelID) {
+async function getFuelPrices(ws, countryCode) {
     return new Promise((resolve, reject) => {
-        // Do we have the fuel prices locally?
-        if (fuel.priceLog) {
-            resolve(fuel.priceLog);
-            return;
-        }
+        // // Do we have the fuel prices locally?
+        // if (fuel.priceLog) {
+        //     resolve(fuel.priceLog);
+        //     return;
+        // }
 
-        // Check if we have the price in the database second
-        db.getFuelPrices(countryCode, fuelID).then((res) => {
-            if (res) {
-                resolve(res);
-                return;
+        // Check if we have the price in the database
+        db.getFuelPrices(countryCode).then((fuelPrices) => {
+            var fetchNewPrices = false;
+            var dateCutOff = new Date();
+            dateCutOff.setHours(dateCutOff.getHours() - 24);
+
+            if (fuelPrices) {
+                console.log("Found fuel prices in DB!");
+
+                if (fuelPrices.last_updated_at < dateCutOff) {
+                    console.log("Out of date, fetching new prices");
+                    fetchNewPrices = true;
+                }
+            } else {
+                fetchNewPrices = true;
             }
+            
+            if (!fetchNewPrices) {
+                resolve(fuelPrices);
+                return;
+            } else {
+                // If not DB then scrape webpage
+                fuel.getFuelPrice(countryCode).then((newFuelPrices) => {
+                    // Once we get our data from webpage, let's
+                    // 1. Log it in DB, and
+                    // 2. Return it
+                    db.insertNewFuelPrices(newFuelPrices, fuel.webpageSourceID()).then((result) => {
+                        // We successfully logged new entries, now send this data to client
+                    });
 
-            // If not DB then scrape webpage
-            fuel.getFuelPrice(countryCode).then((res) => {
-                console.log(res);
-            });
+                    ws.send(JSON.stringify({
+                        type: "fuelPrices",
+                        data: newFuelPrices
+                    }));
+                }).catch((err) => {
+                    console.log("Unable to get fuel prices from webpage");
+                    reject(err);
+                });
+            }
         }).catch((err) => {
             console.log("Unable to get fuel prices from database");
-            console.error(err);
+            reject(err);
         });
     });
 }
@@ -481,7 +508,11 @@ webSocket.on("connection", function connection(ws) {
 
                 if (!countryCode) { return; }
 
-                getFuelPrices(ws, countryCode, fuelID);
+                getFuelPrices(ws, countryCode, fuelID).then((res) => {
+                    // send these prices to the client
+                    console.log(res);
+                });
+
                 break;
 
             default:

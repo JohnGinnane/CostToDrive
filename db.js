@@ -82,7 +82,7 @@ async function insertNewCurrencyRates(currencyConversion, sourceID) {
                   ( SELECT ? AS [ID] ) AS [Source],
                   (
                    ${sql}
-                  ) AS [NewRates]
+                  ) AS [NewRates],
                   ( SELECT IFNULL(MAX([CCL].[Batch]), 0) AS [LastBatch]
                       FROM [CurrencyConversionLog] AS [CCL]
                            LIMIT 1 ) AS [CCL]`;

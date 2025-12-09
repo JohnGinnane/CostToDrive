@@ -12,15 +12,20 @@ var usersRouter  = require('./routes/users');
 var db           = require("./db");
 var fuel         = require("./fuel");
 
+// #region Functions
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
+// #endregion
+
+//#region Config
+
 // Create default values config
 var config = {
     api_currency_key: "",
     last_started:     new Date().toISOString()
-}
-
-function log(str) {
-    var today  = new Date();
-    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
 }
 
 function saveConfig(filepath, obj) {
@@ -53,8 +58,12 @@ try {
 
 log("config done");
 
+//#endregion
+
 // Init other components
 fuel.init(db);
+
+//#region Express
 
 var app = express();
 
@@ -71,6 +80,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
+// Add Bootstrap
+app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+module.exports = app;
+
+app.use(express.static(path.join(__dirname, "public")));
+
+//#endregion
+
+//#region Currency Conv
 // Check database for latest currency conversions
 // Get the most recent (if any!), and when it was
 // last fetched from API
@@ -157,30 +192,11 @@ db.getCurrencyRates().then((res) => {
     }
 });
 
-// Add Bootstrap
-app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
+//#endregion
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+//#region Websocket Init
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-module.exports = app;
-
-app.use(express.static(path.join(__dirname, "public")));
-
-// WEB SOCKET
 const ws             = require("ws");
 //const uuid           = require("uuid");
 //const selfsigned     = require("selfsigned");
@@ -201,8 +217,10 @@ httpServer.listen(3001, () =>  { log('HTTP running on port 3001') });
 
 const webSocket = new ws.Server({ server: httpServer });
 
-// Web Socket Functions
-function getMakes(ws) {
+//#endregion
+
+//#region Websocket Func
+function getMakes(ws, containerID) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT [MAK].[ID] AS [MakeID],
                         [MAK].[Name] AS [Name]
@@ -211,6 +229,7 @@ function getMakes(ws) {
             if (!err) {
                 ws.send(JSON.stringify({
                     type: "make",
+                    containerID: containerID,
                     data: {
                         MakeID: row.MakeID,
                         Name: row.Name
@@ -223,7 +242,7 @@ function getMakes(ws) {
     });
 }
 
-function getModels(ws, makeID) {
+function getModels(ws, containerID, makeID) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT [MOD].[ID] AS [ModelID],
                         [MOD].[Name] AS [Name]
@@ -233,6 +252,7 @@ function getModels(ws, makeID) {
                     if (!err) {
                         ws.send(JSON.stringify({
                             type: "model",
+                            containerID: containerID,
                             data: {
                                 ModelID: row.ModelID,
                                 Name:    row.Name
@@ -245,7 +265,7 @@ function getModels(ws, makeID) {
     })
 }
 
-function getYears(ws, makeID, modelID) {
+function getYears(ws, containerID, makeID, modelID) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT [VEH].[Year]
                    FROM [Makes] AS [MAK]
@@ -262,6 +282,7 @@ function getYears(ws, makeID, modelID) {
                     if (!err) {
                         ws.send(JSON.stringify({
                             type: "year",
+                            containerID: containerID,
                             data: {
                                 Year: row.Year
                             }
@@ -273,7 +294,7 @@ function getYears(ws, makeID, modelID) {
     });
 }
 
-function getFuelTypes(ws, makeID, modelID, year) {
+function getFuelTypes(ws, containerID, makeID, modelID, year) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT [FT].[ID],
                         [FT].[Description]
@@ -296,6 +317,7 @@ function getFuelTypes(ws, makeID, modelID, year) {
                     if (!err) {
                         ws.send(JSON.stringify({
                             type: "fueltype",
+                            containerID: containerID,
                             data: {
                                 FuelTypeID: row.ID,
                                 Description: row.Description
@@ -308,7 +330,7 @@ function getFuelTypes(ws, makeID, modelID, year) {
     });
 }
 
-function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
+function getEngineSizes(ws, containerID, makeID, modelID, year, fuelTypeID) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT [VEH].[Displacement] AS [EngineSize]
                    FROM [Makes] AS [MAK]
@@ -333,6 +355,7 @@ function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
                     if (!err) {
                         ws.send(JSON.stringify({
                             type: "enginesize",
+                            containerID: containerID,
                             data: {
                                 EngineSize: row.EngineSize
                             }
@@ -392,7 +415,7 @@ function getCurrencyConversion(ws) {
     }));
 }
 
-async function getFuelPrices(ws, countryCode) {
+async function getFuelPrices(ws, containerID, countryCode) {
     return new Promise((resolve, reject) => {
         // // Do we have the fuel prices locally?
         // if (fuel.priceLog) {
@@ -419,8 +442,9 @@ async function getFuelPrices(ws, countryCode) {
 
             if (!fetchNewPrices) {
                 ws.send(JSON.stringify({
-                    type: "fuelPrices",
-                    data: fuelPrices
+                    type:        "fuelPrices",
+                    containerID: containerID,
+                    data:        fuelPrices
                 }));
 
                 resolve();
@@ -453,7 +477,9 @@ async function getFuelPrices(ws, countryCode) {
         });
     });
 }
+//#endregion
 
+//#region Websocket Msgs
 webSocket.on("connection", function connection(ws) {
     ws.on("message", function message(req) {
         req = JSON.parse(req);
@@ -461,6 +487,8 @@ webSocket.on("connection", function connection(ws) {
 
         if (!req)        { return; }
         if (!req.action) { return; }
+        
+        var containerID = req.containerID;
 
         switch (req.action.trim().toLowerCase()) {
             case "requestmakes":
@@ -470,14 +498,14 @@ webSocket.on("connection", function connection(ws) {
             case "requestmodels":
                 var makeID = req.makeID;
                 
-                getModels(ws, makeID);
+                getModels(ws, containerID, makeID);
                 break;
 
             case "requestyears":
                 var makeID  = req.makeID;
                 var modelID = req.modelID;
                 
-                getYears(ws, makeID, modelID);
+                getYears(ws, containerID, makeID, modelID);
                 break;
 
             case "requestfueltypes":
@@ -485,7 +513,7 @@ webSocket.on("connection", function connection(ws) {
                 var modelID = req.modelID;
                 var year    = req.year;
                 
-                getFuelTypes(ws, makeID, modelID, year);
+                getFuelTypes(ws, containerID, makeID, modelID, year);
                 break;
 
             case "requestenginesizes":
@@ -494,11 +522,10 @@ webSocket.on("connection", function connection(ws) {
                 var year       = req.year;
                 var fuelTypeID = req.fuelTypeID;
                 
-                getEngineSizes(ws, makeID, modelID, year, fuelTypeID);
+                getEngineSizes(ws, containerID, makeID, modelID, year, fuelTypeID);
                 break;
 
             case "requestfueleconomies":
-                var containerID = req.containerID;
                 var makeID      = req.makeID;
                 var modelID     = req.modelID;
                 var year        = req.year;
@@ -518,7 +545,7 @@ webSocket.on("connection", function connection(ws) {
 
                 if (!countryCode) { return; }
 
-                getFuelPrices(ws, countryCode, fuelID).then((res) => {
+                getFuelPrices(ws, containerID, countryCode, fuelID).then((res) => {
                     // send these prices to the client
                     console.log(res);
                 });
@@ -530,3 +557,5 @@ webSocket.on("connection", function connection(ws) {
         }
     });
 });
+
+//#endregion

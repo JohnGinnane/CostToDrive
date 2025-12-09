@@ -248,65 +248,70 @@ function requestCurrencyConversion() {
     webSocket.send(JSON.stringify(req));
 }
 
-function requestMakes() {
+function requestMakes(containerID) {
     let req = {
-        action: "requestMakes"
+        action:      "requestMakes",
+        containerID: containerID
     }
 
     webSocket.send(JSON.stringify(req));
 }
 
-function requestModels(makeID) {
+function requestModels(containerID, makeID) {
     let req = {
-        action: "requestModels",
-        makeID:     makeID
+        action:      "requestModels",
+        containerID: containerID, // I dont love this but it might just work
+        makeID:      makeID
     }
 
     webSocket.send(JSON.stringify(req));
 }
 
-function requestYears(makeID, modelID) {
+function requestYears(containerID, makeID, modelID) {
     let req = {
-        action:  "requestYears",
-        makeID:  makeID,
-        modelID: modelID
+        action:      "requestYears",
+        containerID: containerID, // I dont love this but it might just work
+        makeID:      makeID,
+        modelID:     modelID
     }
 
     webSocket.send(JSON.stringify(req));
 }
 
-function requestFuelTypes(makeID, modelID, year) {
+function requestFuelTypes(containerID, makeID, modelID, year) {
     let req = {
-        action:  "requestFuelTypes",
-        makeID:  makeID,
-        modelID: modelID,
-        year:    year
+        action:      "requestFuelTypes",
+        containerID: containerID, // I dont love this but it might just work
+        makeID:      makeID,
+        modelID:     modelID,
+        year:        year
     }
 
     webSocket.send(JSON.stringify(req));
 }
 
-function requestEngineSizes(makeID, modelID, year, fuelTypeID) {
+function requestEngineSizes(containerID, makeID, modelID, year, fuelTypeID) {
     let req = {
         action:     "requestEngineSizes",
-        makeID:     makeID,
-        modelID:    modelID,
-        year:       year,
-        fuelTypeID: fuelTypeID
+        containerID: containerID, // I dont love this but it might just work
+        makeID:      makeID,
+        modelID:     modelID,
+        year:        year,
+        fuelTypeID:  fuelTypeID
     }
 
     webSocket.send(JSON.stringify(req));
 }
 
-function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize, containerID) {
+function requestFuelEconomies(containerID, makeID, modelID, year, fuelTypeID, engineSize) {
     let req = {
         action:      "requestFuelEconomies",
+        containerID: containerID, // I dont love this but it might just work
         makeID:      makeID,
         modelID:     modelID,
         year:        year,
         fuelTypeID:  fuelTypeID,
-        engineSize:  engineSize,
-        containerID: containerID // I dont love this but it might just work
+        engineSize:  engineSize
     }
 
     webSocket.send(JSON.stringify(req));
@@ -315,6 +320,7 @@ function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize, con
 function requestFuelPrices(countryCode, fuelID) {
     let req = {
         action:      "requestFuelPrices",
+        containerID: containerID, // I dont love this but it might just work
         countryCode: countryCode,
         fuelID:      fuelID
     }
@@ -326,61 +332,78 @@ function requestFuelPrices(countryCode, fuelID) {
 
 //#region Response Functions
 
-function addNewMake(makeID, name) {
-    let selectMake  = document.getElementById("select-make");
-    let newOption   = document.createElement("option");
-    newOption.value = makeID;
-    newOption.text  = name;
+function addNewMake(container, makeID, name) {
+    var selectMake = $(container).find("select.ctd-make").first();
 
-    selectMake.appendChild(newOption);
+    if (selectMake) {
+        var newOption = document.createElement("option");
+        newOption.value = makeID;
+        newOption.text  = name;
+
+        selectMake.append(newOption);
+    }
 }
 
-function addNewModel(modelID, name) {
-    let selectModel = document.getElementById("select-model");
-    let newOption   = document.createElement("option");
-    newOption.value = modelID;
-    newOption.text  = name;
+function addNewModel(container, modelID, name) {
+    // Look for a "ctd-model" class within our container
+    var selectModel = $(container).find("select.ctd-model").first();
 
-    selectModel.appendChild(newOption);
+    if (selectModel) {
+        let newOption   = document.createElement("option");
+        newOption.value = modelID;
+        newOption.text  = name;
+
+        selectModel.append(newOption);
+    }
 }
 
-function addNewYear(year) {
-    var selectYear  = document.getElementById("select-year");
-    var newOption   = document.createElement("option");
-    newOption.value = year;
-    newOption.text  = year;
+function addNewYear(container, year) {
+    var selectYear = $(container).find("select.ctd-year").first();
 
-    selectYear.appendChild(newOption);
+    if (selectYear) {
+        var newOption   = document.createElement("option");
+        newOption.value = year;
+        newOption.text  = year;
+
+        selectYear.append(newOption);
+    }
 }
 
-function addNewFuelType(fuelTypeID, description) {
-    var selectFuelType = document.getElementById("select-fuel-type");
-    var newOption      = document.createElement("option");
-    newOption.value    = fuelTypeID;
-    newOption.text     = description;
+function addNewFuelType(container, fuelTypeID, description) {
+    selectFuelType = $(container).find("select.ctd-fuel-type").first();
 
-    selectFuelType.appendChild(newOption);
+    if (selectFuelType) {
+        var newOption   = document.createElement("option");
+        newOption.value = fuelTypeID;
+        newOption.text  = description;
+
+        selectFuelType.append(newOption);
+    }
 }
 
-function addNewEngineSize(engineSize) {
-    var selectEngineSize = document.getElementById("select-engine-size");
-    var newOption        = document.createElement("option");
-    newOption.value      = engineSize;
-    newOption.text       = engineSize.toFixed(1);
+function addNewEngineSize(container, engineSize) {
+    var selectEngineSize = $(container).find("select.ctd-engine-size");
 
-    selectEngineSize.appendChild(newOption);
+    if (selectEngineSize) {
+        var newOption   = document.createElement("option");
+        newOption.value = engineSize;
+        newOption.text  = engineSize.toFixed(1);
+
+        selectEngineSize.append(newOption);
+    }
 }
 
-function updateFuelPrice(fuelPrices) {
+function updateFuelPrice(container, fuelPrices) {
     console.log(fuelPrices);
 
-    var selectedFuelTypeID = getSelectedValue($("#select-fuel-type"));
-    var selectedCurrency   = getSelectedValue($("#select-price-currency"));
-    
     if (!fuelPrices) {
         return;
     }
 
+    var selectedFuelTypeID = $(container).find("select.ctd-fuel-type").first().find(":selected").val().trim();
+    var selectedCurrency   = $(container).find("select.ctd-price-currency").first().find(":selected").val().trim();
+    var inputFuelPrice     = $(container).find("input.ctd-fuel-price").first();
+    
     Object.keys(fuelPrices.prices).forEach((fuelName) => {
         var fuelPrice = fuelPrices.prices[fuelName];
         console.log(fuelPrice);
@@ -393,7 +416,7 @@ function updateFuelPrice(fuelPrices) {
             var fuelPrice    = Number(fuelPrice.price);
 
             fuelPrice = convertCurrency(fuelPrice, fuelCurrency, selectedCurrency);
-            $("#input-fuel-price").val(formatNumber(fuelPrice));
+            $(inputFuelPrice).val(formatNumber(fuelPrice));
         }
     });
 }
@@ -464,30 +487,30 @@ function clearMakeOptions(container) {
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
     // console.log(resp);
+    var container = findByID(resp.containerID);
 
     switch (resp.type.trim().toLowerCase()) {
         case "make":
-            addNewMake(Number(resp.data.MakeID), resp.data.Name);
+            addNewMake(container, Number(resp.data.MakeID), resp.data.Name);
             break;
 
         case "model":
-            addNewModel(Number(resp.data.ModelID), resp.data.Name);
+            addNewModel(container, Number(resp.data.ModelID), resp.data.Name);
             break;
 
         case "year":
-            addNewYear(Number(resp.data.Year));
+            addNewYear(container, Number(resp.data.Year));
             break;
 
         case "fueltype":
-            addNewFuelType(Number(resp.data.FuelTypeID), resp.data.Description);
+            addNewFuelType(container, Number(resp.data.FuelTypeID), resp.data.Description);
             break;
 
         case "enginesize":
-            addNewEngineSize(Number(resp.data.EngineSize));
+            addNewEngineSize(container, Number(resp.data.EngineSize));
             break;
 
         case "fueleconomy":
-            var container = findByID(resp.containerID);
             $(container).data("avgUrbanKMPL",    Number(resp.data.AvgUrbanKMPL));
             $(container).data("avgMotorwayKMPL", Number(resp.data.AvgMotorwayKMPL));
             

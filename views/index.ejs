@@ -14,7 +14,7 @@
     <link rel="icon" href="/images/emoji-car-w10-32x32.png" type="image/x-icon">
   </head>
   <body id="ctd-body">
-    <div class="container-fluid h-100">
+    <div id="div-test-container" class="container-fluid h-100 ctd-container">
         <div class="row d-flex justify-content-center align-items-center">
             <!-- Make -->
             <div class="justify-content-center h-100 col-9 row m-1">
@@ -23,7 +23,7 @@
                 </div>
 
                 <div class="col-6">
-                    <select id="select-make" class="form-select" aria-label="Default select example">
+                    <select id="select-make" class="form-select ctd-make" onchange="makeChanged(this)">
                         <option value="" selected>Select a Make</option>
                     </select>
                 </div> 
@@ -36,7 +36,7 @@
                 </div>
 
                 <div class="col-6">
-                    <select id="select-model" class="form-select" style="font-family: 'Rubik';">
+                    <select id="select-model" class="form-select ctd-model" onchange="modelChanged(this)" style="font-family: 'Rubik';">
                         <option value="" selected>Select a Model</option>
                     </select>
                 </div> 
@@ -49,7 +49,7 @@
                 </div>
 
                 <div class="col-6">
-                    <select id="select-year" class="form-select" aria-label="Test">
+                    <select id="select-year" class="form-select ctd-year" onchange="yearChanged(this)">
                         <option value="" selected>Select a Year</option>
                     </select>
                 </div>
@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="col-6">
-                    <select id="select-fuel-type" class="form-select" aria-label="Test">
+                    <select id="select-fuel-type" class="form-select ctd-fuel-type" onchange="fuelTypeChanged(this)">
                         <option value="" selected>Select a Fuel Type</option>
                     </select>
                 </div>
@@ -75,7 +75,7 @@
                 </div>
 
                 <div class="col-6">
-                    <select id="select-engine-size" class="form-select" aria-label="Test">
+                    <select id="select-engine-size" class="form-select ctd-engine-size" onchange="engineSizeChanged(this)">
                         <option value="" selected>Select an Engine Size</option>
                     </select>
                 </div>

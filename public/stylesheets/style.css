@@ -39,3 +39,16 @@ a {
 .numeric-2 {
     text-align: end;
 }
+
+/* Classes used for navigation */
+.ctd-container { }
+
+.ctd-make { }
+
+.ctd-model { }
+
+.ctd-year { }
+
+.ctd-fuel-type { }
+
+.ctd-engine-size { }

@@ -378,42 +378,55 @@ function updateFuelPrice(fuelPrices) {
 // will call the previously
 // defined function, chaining them
 
-function clearEngineSizeOptions() {
-    var selectEngineSize = $("#select-engine-size");
+function clearEngineSizeOptions(container) {
+    var selectEngineSize = $(container).find("select.ctd-engine-size").first();
     selectEngineSize.empty();
     selectEngineSize.append("<option value='' selected>Select an Engine Size</option>");
 }
 
-function clearFuelTypeOptions() {
-    clearEngineSizeOptions();
+function clearFuelTypeOptions(container) {
+    var selectFuelType = $(container).find("select.ctd-fuel-type").first();
 
-    var selectFuelType = $("#select-fuel-type");
-    selectFuelType.empty();
-    selectFuelType.append("<option value='' selected>Select a Fuel Type</option>");
+    if (selectFuelType) {
+        selectFuelType.empty();
+        selectFuelType.append("<option value='' selected>Select a Fuel Type</option>");
+    }
+
+    clearEngineSizeOptions(container);
 }
 
-function clearYearOptions() {
-    clearFuelTypeOptions();
+function clearYearOptions(container) {
+    var selectYear = $(container).find("select.ctd-year").first();
 
-    var selectYear = $("#select-year");
-    selectYear.empty();
-    selectYear.append("<option value='' selected>Select a Year</option>")
-}
-
-function clearModelOptions() {
-    clearYearOptions();
-
-    var selectModel = $("#select-model");
-    selectModel.empty();
-    selectModel.append("<option value='' selected>Select a Model</option>");
-}
-
-function clearMakeOptions() {
-    clearModelOptions();
+    if (selectYear) {
+        selectYear.empty();
+        selectYear.append("<option value='' selected>Select a Year</option>")
+    }
     
-    var selectMake = $("#select-make");
-    selectMake.empty();
-    selectMake.append("<option value='' selected>Select a Make</option>")
+    clearFuelTypeOptions(container);
+}
+
+function clearModelOptions(container) {
+    // Look for a "ctd-model" class within our container
+    var selectModel = $(container).find("select.ctd-model").first();
+
+    if (selectModel) {
+        selectModel.empty();
+        selectModel.append("<option value='' selected>Select a Model</option>");
+    }
+
+    clearYearOptions(container);
+}
+
+function clearMakeOptions(container) {
+    var selectMake = $(container).find("select.ctd-make").first();
+
+    if (selectMake) {
+        selectMake.empty();
+        selectMake.append("<option value='' selected>Select a Make</option>");
+    }
+
+    clearModelOptions(container);
 }
 
 //#endregion
@@ -470,76 +483,176 @@ webSocket.onmessage = (msg) => {
 //#region Selection Changed Events
 
 // Events for when a selection is changed
-$("#select-make").on("change", (e) => {
-    // Get the value of the make
-    // and ensure it's non-blank
-    var makeID = getSelectedValue($("#select-make"));
+function findParentContainer(node) {
+    var curNode = node;
 
-    if (!makeID) { return; }
+    while (curNode) {
+        if (curNode.classList.contains("ctd-container")) {
+            return curNode;
+        }
 
-    clearModelOptions();
-    requestModels(makeID);
-});
+        curNode = curNode.parentElement;
+    }
+}
 
-$("#select-model").on("change", (e) => {
-    var makeID = getSelectedValue($("#select-make"));
-    var modelID = getSelectedValue($("#select-model"));
+function findParameterValues(parentContainer) {
+    return {
+        makeID:     Number($(parentContainer).find("select.ctd-make").first().val()),
+        modelID:    Number($(parentContainer).find("select.ctd-model").first().val()),
+        year:       Number($(parentContainer).find("select.ctd-year").first().val()),
+        fuelTypeID: Number($(parentContainer).find("select.ctd-fuel-type").first().val()),
+        engineSize: Number($(parentContainer).find("select.ctd-engine-size").first().val())
+    }
+}
 
-    if (!makeID || !modelID) { return; }
+// $("#select-make").on("change", (e) => {
+//     // Get the value of the make
+//     // and ensure it's non-blank
+//     var makeID = getSelectedValue($("#select-make"));
 
-    clearYearOptions();
-    requestYears(makeID, modelID);
-});
+//     if (!makeID) { return; }
 
-$("#select-year").on("change", (e) => {
-    var makeID  = getSelectedValue($("#select-make"));
-    var modelID = getSelectedValue($("#select-model"));
-    var year    = getSelectedValue($("#select-year"));
+//     clearModelOptions();
+//     requestModels(makeID);
+// });
 
-    if (!makeID || !modelID || !year) {
-        return;
+// $("#select-model").on("change", (e) => {
+//     var makeID = getSelectedValue($("#select-make"));
+//     var modelID = getSelectedValue($("#select-model"));
+
+//     if (!makeID || !modelID) { return; }
+
+//     clearYearOptions();
+//     requestYears(makeID, modelID);
+// });
+
+// $("#select-year").on("change", (e) => {
+//     var makeID  = getSelectedValue($("#select-make"));
+//     var modelID = getSelectedValue($("#select-model"));
+//     var year    = getSelectedValue($("#select-year"));
+
+//     if (!makeID || !modelID || !year) {
+//         return;
+//     }
+
+//     clearFuelTypeOptions();
+//     requestFuelTypes(makeID, modelID, year);
+// });
+
+// $("#select-fuel-type").on("change", (e) => {
+//     var makeID     = getSelectedValue($("#select-make"));
+//     var modelID    = getSelectedValue($("#select-model"));
+//     var year       = getSelectedValue($("#select-year"));
+//     var fuelTypeID = getSelectedValue($("#select-fuel-type"));
+
+//     if (!makeID || !modelID || !year || !fuelTypeID) {
+//         return;
+//     }
+
+//     clearEngineSizeOptions();
+//     requestEngineSizes(makeID, modelID, year, fuelTypeID)
+// })
+
+// // Once an engine size is selected we need 
+// // to get the average fuel eco for city and
+// // for motorway driving. The slider will be
+// // a range of 0% to 100% in terms of how much
+// // driving is on the motorway
+// $("#select-engine-size").on("change", (e) => {
+//     var makeID     = getSelectedValue($("#select-make"));
+//     var modelID    = getSelectedValue($("#select-model"));
+//     var year       = getSelectedValue($("#select-year"));
+//     var fuelTypeID = getSelectedValue($("#select-fuel-type"));
+//     var engineSize = getSelectedValue($("#select-engine-size"));
+
+//     if (!makeID || !modelID || !year || !fuelTypeID || !engineSize) {
+//         return;
+//     }
+
+//     requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize);
+// });
+
+function makeChanged(sender) {
+    // First find the parent container
+    // Then clear out the next parameter (model)
+    // then fetch the models for this make
+    // then populate the dropdown with those (async)
+
+    var parentContainer = findParentContainer(sender);
+
+    // Clear out subsequent parameters using the parent ID
+    if (parentContainer) {
+        clearModelOptions(parentContainer);
+
+        var selectedParameters = findParameterValues(parentContainer);
+        requestModels(selectedParameters.makeID);
     }
 
-    clearFuelTypeOptions();
-    requestFuelTypes(makeID, modelID, year);
-});
+}
 
-$("#select-fuel-type").on("change", (e) => {
-    var makeID     = getSelectedValue($("#select-make"));
-    var modelID    = getSelectedValue($("#select-model"));
-    var year       = getSelectedValue($("#select-year"));
-    var fuelTypeID = getSelectedValue($("#select-fuel-type"));
+function modelChanged(sender) {
+    var parentContainer = findParentContainer(sender);
 
-    if (!makeID || !modelID || !year || !fuelTypeID) {
-        return;
+    if (parentContainer) {
+        clearYearOptions(parentContainer);
+
+        var selectedParameters = findParameterValues(parentContainer);
+
+        requestYears(selectedParameters.makeID,
+                    selectedParameters.modelID);
     }
 
-    clearEngineSizeOptions();
-    requestEngineSizes(makeID, modelID, year, fuelTypeID)
-})
+}
+
+function yearChanged(sender) {
+    var parentContainer = findParentContainer(sender);
+
+    if (parentContainer) {
+        clearFuelTypeOptions(parentContainer);
+
+        var selectedParameters = findParameterValues(parentContainer);
+
+        requestFuelTypes(selectedParameters.makeID,
+                        selectedParameters.modelID,
+                        selectedParameters.year);
+    }
+
+}
+
+function fuelTypeChanged(sender) {
+    var parentContainer = findParentContainer(sender);
+
+    if (parentContainer) {
+        clearEngineSizeOptions(parentContainer);
+
+        var selectedParameters = findParameterValues(parentContainer);
+
+        requestEngineSizes(selectedParameters.makeID,
+                           selectedParameters.modelID,
+                           selectedParameters.year,
+                           selectedParameters.fuelTypeID)
+    }
+}
+
+function engineSizeChanged(sender) {
+    var parentContainer = findParentContainer(sender);
+
+    if (parentContainer) {
+        var selectedParameters = findParameterValues(parentContainer);
+
+        if (selectedParameters) {
+            requestFuelEconomies(selectedParameters.makeID,
+                                 selectedParameters.modelID,
+                                 selectedParameters.year,
+                                 selectedParameters.fuelTypeID,
+                                 selectedParameters.engineSize);
+        }
+    }
+}
 
 //#endregion
 
 //#region Parameter Changed Events
-
-// Once an engine size is selected we need 
-// to get the average fuel eco for city and
-// for motorway driving. The slider will be
-// a range of 0% to 100% in terms of how much
-// driving is on the motorway
-$("#select-engine-size").on("change", (e) => {
-    var makeID     = getSelectedValue($("#select-make"));
-    var modelID    = getSelectedValue($("#select-model"));
-    var year       = getSelectedValue($("#select-year"));
-    var fuelTypeID = getSelectedValue($("#select-fuel-type"));
-    var engineSize = getSelectedValue($("#select-engine-size"));
-
-    if (!makeID || !modelID || !year || !fuelTypeID || !engineSize) {
-        return;
-    }
-
-    requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize);
-});
 
 // Whenever the driving style range changes
 // we need to recalculate the fuel economy

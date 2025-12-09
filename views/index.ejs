@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="col-6 my-auto p-0">
-                    <input id="input-driving-style" min="0" max="100" step="1" value="50" class="form-range w-100 calc-cost" type="range"/>
+                    <input id="input-driving-style" min="0" max="100" step="1" value="50" class="form-range w-100 calc-cost ctd-driving-style" type="range" onchange="drivingStyleChanged(this)"/>
                 </div>
 
                 <div class="col-3 my-auto p-1">
@@ -105,11 +105,11 @@
                 <div class="col-6">
                     <div class="row">
                         <div class="col-7 pe-0">
-                            <input type="text" id="input-fuel-eco" class="form-control w-100 numeric-2 calc-cost"/>
+                            <input type="text" id="input-fuel-eco" class="form-control w-100 numeric-2 calc-cost ctd-fuel-eco"/>
                         </div>
 
                         <div class="col-5 ps-0">
-                            <select id="select-fuel-eco-unit" class="form-select calc-cost">
+                            <select id="select-fuel-eco-unit" class="form-select calc-cost ctd-fuel-eco-unit">
                                 <option value="kmpl">KM/L</option>
                                 <option value="lp100km">L/100KM</option>
                                 <option value="mpguk">MPG (UK)</option>

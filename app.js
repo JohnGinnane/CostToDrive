@@ -344,7 +344,7 @@ function getEngineSizes(ws, makeID, modelID, year, fuelTypeID) {
     });
 }
 
-function getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize) {
+function getFuelEconomies(ws, containerID, makeID, modelID, year, fuelTypeID, engineSize) {
     db.conn.serialize(() => {
         db.conn.each(`SELECT AVG([UrbanKMPL]) AS [AvgUrbanKMPL],
                         AVG([MotorwayKMPL]) AS [AvgMotorwayKMPL]
@@ -371,7 +371,8 @@ function getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize) {
                 (err, row) => {
                     if (!err) {
                         ws.send(JSON.stringify({
-                            type: "fueleconomy",
+                            type:        "fueleconomy",
+                            containerID: containerID,
                             data: {
                                 AvgUrbanKMPL:    row.AvgUrbanKMPL,
                                 AvgMotorwayKMPL: row.AvgMotorwayKMPL
@@ -497,13 +498,14 @@ webSocket.on("connection", function connection(ws) {
                 break;
 
             case "requestfueleconomies":
-                var makeID     = req.makeID;
-                var modelID    = req.modelID;
-                var year       = req.year;
-                var fuelTypeID = req.fuelTypeID;
-                var engineSize = req.engineSize;
+                var containerID = req.containerID;
+                var makeID      = req.makeID;
+                var modelID     = req.modelID;
+                var year        = req.year;
+                var fuelTypeID  = req.fuelTypeID;
+                var engineSize  = req.engineSize;
                 
-                getFuelEconomies(ws, makeID, modelID, year, fuelTypeID, engineSize);
+                getFuelEconomies(ws, containerID, makeID, modelID, year, fuelTypeID, engineSize);
                 break;
 
             case "requestcurrencyconversion":

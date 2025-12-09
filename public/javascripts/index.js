@@ -37,8 +37,8 @@ function getSelectedValue(selectNode) {
     return $(selectNode).find(":selected").val().trim();
 }
 
-function getSelectedFuelEconomyUnit() {
-    return $("#select-fuel-eco-unit").find(":selected").val().trim().toLowerCase();
+function getSelectedFuelEconomyUnit(parentContainer) {
+    return $(parentContainer).find("select.ctd-fuel-eco-unit").first().val().trim().toLowerCase();
 }
 
 function convertFuelEco(curValue, curUnit, newUnit) {
@@ -149,13 +149,15 @@ function convertCurrency(curValue, curUnit, newUnit) {
     return newValue;
 }
 
-function updateFuelEco(newValue) {
+function updateFuelEco(parentContainer, newValue) {
+    var inputFuelEco = $(parentContainer).find("input.ctd-fuel-eco").first();
+
     if (!newValue) {
-        newValue = coerceNumber($("#input-fuel-eco").val());
+        newValue = coerceNumber($(inputFuelEco).val());
     }
 
     if (newValue) {
-        $("#input-fuel-eco").val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit()).toFixed(2));
+        $(inputFuelEco).val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit(parentContainer)).toFixed(2));
     }
 }
 
@@ -209,6 +211,31 @@ function formatNumber(val, locale = undefined, decimalPlaces = 2) {
     return numberFormat.format(val);
 }
 
+function findParentContainer(node) {
+    var curNode = node;
+
+    while (curNode) {
+        if (curNode.classList.contains("ctd-container")) {
+            return curNode;
+        }
+
+        curNode = curNode.parentElement;
+    }
+}
+
+function findParameterValues(parentContainer) {
+    return {
+        makeID:     Number($(parentContainer).find("select.ctd-make").first().val()),
+        modelID:    Number($(parentContainer).find("select.ctd-model").first().val()),
+        year:       Number($(parentContainer).find("select.ctd-year").first().val()),
+        fuelTypeID: Number($(parentContainer).find("select.ctd-fuel-type").first().val()),
+        engineSize: Number($(parentContainer).find("select.ctd-engine-size").first().val())
+    }
+}
+
+function findByID(containerID) {
+    return $("#" + containerID);
+}
 //#endregion
 
 //#region Request Functions
@@ -271,14 +298,15 @@ function requestEngineSizes(makeID, modelID, year, fuelTypeID) {
     webSocket.send(JSON.stringify(req));
 }
 
-function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize) {
+function requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize, containerID) {
     let req = {
-        action:     "requestFuelEconomies",
-        makeID:     makeID,
-        modelID:    modelID,
-        year:       year,
-        fuelTypeID: fuelTypeID,
-        engineSize: engineSize
+        action:      "requestFuelEconomies",
+        makeID:      makeID,
+        modelID:     modelID,
+        year:        year,
+        fuelTypeID:  fuelTypeID,
+        engineSize:  engineSize,
+        containerID: containerID // I dont love this but it might just work
     }
 
     webSocket.send(JSON.stringify(req));
@@ -372,7 +400,7 @@ function updateFuelPrice(fuelPrices) {
 
 //#endregion
 
-//#region Clear Selection Functions
+//#region Clear Selection
 // Define last selector function first
 // then each subsequent function
 // will call the previously
@@ -431,7 +459,8 @@ function clearMakeOptions(container) {
 
 //#endregion
 
-//// INCOMING WEBSOCKETS ////
+//#region Websocket Response
+
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
     // console.log(resp);
@@ -458,8 +487,10 @@ webSocket.onmessage = (msg) => {
             break;
 
         case "fueleconomy":
-            avgUrbanKMPL    = Number(resp.data.AvgUrbanKMPL);
-            avgMotorwayKMPL = Number(resp.data.AvgMotorwayKMPL);
+            var container = findByID(resp.containerID);
+            $(container).data("avgUrbanKMPL",    Number(resp.data.AvgUrbanKMPL));
+            $(container).data("avgMotorwayKMPL", Number(resp.data.AvgMotorwayKMPL));
+            
             // Manually trigger the "change" event so we can
             // calculate the eco
             $("#input-driving-style").trigger("change");
@@ -480,98 +511,11 @@ webSocket.onmessage = (msg) => {
     }
 }
 
-//#region Selection Changed Events
+//#endregion
+
+//#region Selection Changed
 
 // Events for when a selection is changed
-function findParentContainer(node) {
-    var curNode = node;
-
-    while (curNode) {
-        if (curNode.classList.contains("ctd-container")) {
-            return curNode;
-        }
-
-        curNode = curNode.parentElement;
-    }
-}
-
-function findParameterValues(parentContainer) {
-    return {
-        makeID:     Number($(parentContainer).find("select.ctd-make").first().val()),
-        modelID:    Number($(parentContainer).find("select.ctd-model").first().val()),
-        year:       Number($(parentContainer).find("select.ctd-year").first().val()),
-        fuelTypeID: Number($(parentContainer).find("select.ctd-fuel-type").first().val()),
-        engineSize: Number($(parentContainer).find("select.ctd-engine-size").first().val())
-    }
-}
-
-// $("#select-make").on("change", (e) => {
-//     // Get the value of the make
-//     // and ensure it's non-blank
-//     var makeID = getSelectedValue($("#select-make"));
-
-//     if (!makeID) { return; }
-
-//     clearModelOptions();
-//     requestModels(makeID);
-// });
-
-// $("#select-model").on("change", (e) => {
-//     var makeID = getSelectedValue($("#select-make"));
-//     var modelID = getSelectedValue($("#select-model"));
-
-//     if (!makeID || !modelID) { return; }
-
-//     clearYearOptions();
-//     requestYears(makeID, modelID);
-// });
-
-// $("#select-year").on("change", (e) => {
-//     var makeID  = getSelectedValue($("#select-make"));
-//     var modelID = getSelectedValue($("#select-model"));
-//     var year    = getSelectedValue($("#select-year"));
-
-//     if (!makeID || !modelID || !year) {
-//         return;
-//     }
-
-//     clearFuelTypeOptions();
-//     requestFuelTypes(makeID, modelID, year);
-// });
-
-// $("#select-fuel-type").on("change", (e) => {
-//     var makeID     = getSelectedValue($("#select-make"));
-//     var modelID    = getSelectedValue($("#select-model"));
-//     var year       = getSelectedValue($("#select-year"));
-//     var fuelTypeID = getSelectedValue($("#select-fuel-type"));
-
-//     if (!makeID || !modelID || !year || !fuelTypeID) {
-//         return;
-//     }
-
-//     clearEngineSizeOptions();
-//     requestEngineSizes(makeID, modelID, year, fuelTypeID)
-// })
-
-// // Once an engine size is selected we need 
-// // to get the average fuel eco for city and
-// // for motorway driving. The slider will be
-// // a range of 0% to 100% in terms of how much
-// // driving is on the motorway
-// $("#select-engine-size").on("change", (e) => {
-//     var makeID     = getSelectedValue($("#select-make"));
-//     var modelID    = getSelectedValue($("#select-model"));
-//     var year       = getSelectedValue($("#select-year"));
-//     var fuelTypeID = getSelectedValue($("#select-fuel-type"));
-//     var engineSize = getSelectedValue($("#select-engine-size"));
-
-//     if (!makeID || !modelID || !year || !fuelTypeID || !engineSize) {
-//         return;
-//     }
-
-//     requestFuelEconomies(makeID, modelID, year, fuelTypeID, engineSize);
-// });
-
 function makeChanged(sender) {
     // First find the parent container
     // Then clear out the next parameter (model)
@@ -652,14 +596,19 @@ function engineSizeChanged(sender) {
 
 //#endregion
 
-//#region Parameter Changed Events
+//#region Parameter Changed
 
 // Whenever the driving style range changes
 // we need to recalculate the fuel economy
-$("#input-driving-style").on("change", (e) => {
-    // Interpolate between urban and motorway driving
+function drivingStyleChanged(sender) {
+    var parentContainer = findParentContainer(sender);
+
+    if (!parentContainer) { return; }
+
+    var avgMotorwayKMPL     = Number(parentContainer.data("avgMotorwayKMPL"));
+    var avgUrbanKMPL        = Number(parentContainer.data("avgUrbanKMPL"));
     var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
-    var drivingStylePercent = Number($("#input-driving-style").val()) / 100.00;
+    var drivingStylePercent = Number(sender.value) / 100.00;
     var expectedEconomy = 1;
 
     if (avgMotorwayKMPL > avgUrbanKMPL) {
@@ -668,10 +617,27 @@ $("#input-driving-style").on("change", (e) => {
         expectedEconomy = avgMotorwayKMPL + (economyDifference * drivingStylePercent);
     }
 
-    expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit());
+    expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit(parentContainer));
+    
+    updateFuelEco(parentContainer, expectedEconomy);
+}
 
-    updateFuelEco(expectedEconomy);
-});
+// $("#input-driving-style").on("change", (e) => {
+//     // Interpolate between urban and motorway driving
+//     var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
+//     var drivingStylePercent = Number($("#input-driving-style").val()) / 100.00;
+//     var expectedEconomy = 1;
+
+//     if (avgMotorwayKMPL > avgUrbanKMPL) {
+//         expectedEconomy = avgUrbanKMPL    + (economyDifference * drivingStylePercent);
+//     } else {
+//         expectedEconomy = avgMotorwayKMPL + (economyDifference * drivingStylePercent);
+//     }
+
+//     expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit());
+
+//     updateFuelEco(expectedEconomy);
+// });
 
 // Recalculate if we changed unit of measurement
 $("#select-fuel-eco-unit").on("change", (e) => {

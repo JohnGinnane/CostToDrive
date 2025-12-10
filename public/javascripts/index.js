@@ -59,7 +59,7 @@ function convertFuelEco(curValue, curUnit, newUnit) {
     curUnit  = curUnit.trim().toLowerCase();
     newUnit  = newUnit.trim().toLowerCase();
 
-    if (curUnit === newUnit) { return curValue; }
+    if (curUnit == newUnit) { return curValue; }
 
     // First convert to kilometre per litre (kmpl)
     // then convert to other unit
@@ -108,6 +108,8 @@ function convertDistance(curValue, curUnit, newUnit) {
     curValue = coerceNumber(curValue);
     curUnit  = curUnit.trim().toLowerCase();
     newUnit  = newUnit.trim().toLowerCase();
+
+    if (curUnit == newUnit) { return curValue; }
 
     // As before, let's convert to KM first
     var newValue = curValue;
@@ -186,12 +188,13 @@ function calculateCostToDrive(parentContainer) {
     var distance       = $(parentContainer).find("input.ctd-distance").first().val();
     var fuelEconomy    = $(parentContainer).find("input.ctd-fuel-eco").first().val();
 
-    var preDistUnit    = $(parentContainer).find("input.ctd-distance-unit").first().val();
+    var preDistUnit    = $(parentContainer).find("select.ctd-distance-unit").first().val();
     var preFuelEcoUnit = $(parentContainer).find("select.ctd-fuel-eco-unit").first().val();
 
     // Convert values into common units:
     // 1. Distance     -> Kilometres
     // 2. Fuel Economy -> Kilometres per Litre
+
     distance = coerceNumber(convertDistance(distance, preDistUnit, "km"));
     fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, preFuelEcoUnit, "kmpl"));
 
@@ -240,8 +243,10 @@ function findParentContainer(node) {
     var curNode = node;
 
     while (curNode) {
-        if (curNode.classList.contains("ctd-container")) {
-            return curNode;
+        if (curNode.classList) {
+            if (curNode.classList.contains("ctd-container")) {
+                return curNode;
+            }
         }
 
         curNode = curNode.parentElement;
@@ -339,7 +344,7 @@ function requestFuelEconomies(containerID, makeID, modelID, year, fuelTypeID, en
     webSocket.send(JSON.stringify(req));
 }
 
-function requestFuelPrices(countryCode, fuelID) {
+function requestFuelPrices(containerID, countryCode, fuelID) {
     let req = {
         action:      "requestFuelPrices",
         containerID: containerID, // I dont love this but it might just work
@@ -538,7 +543,19 @@ webSocket.onmessage = (msg) => {
             
             // Manually trigger the "change" event so we can
             // calculate the eco
-            $("#input-driving-style").trigger("change");
+            var inputDrivingStyle = $(container).find("input.ctd-driving-style").first();
+
+            if (inputDrivingStyle.length) {
+                if (inputDrivingStyle.length > 0) {
+                    inputDrivingStyle = inputDrivingStyle[0];
+                }
+            }
+
+            if (inputDrivingStyle) {
+                drivingStyleChanged(inputDrivingStyle);
+            }
+
+            calculateCostToDrive(container);
             break;
 
         case "currencyconversion":
@@ -650,6 +667,8 @@ function engineSizeChanged(sender) {
 // Whenever the driving style range changes
 // we need to recalculate the fuel economy
 function drivingStyleChanged(sender) {
+    console.log(sender);
+
     var parentContainer = findParentContainer(sender);
 
     if (!parentContainer) { return; }
@@ -667,7 +686,7 @@ function drivingStyleChanged(sender) {
     }
 
     expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit(parentContainer));
-    
+
     updateFuelEco(parentContainer, expectedEconomy);
 }
 
@@ -743,7 +762,11 @@ $(".numeric-2").on("keydown", function (e) {
 
 // Recalculate cost if any of these fields change
 $(".calc-cost").on("change", function(e) {
-    calculateCostToDrive();
+    if (!e) { return; }
+    var sender = e.target;
+    if (!sender) { return; }
+
+    calculateCostToDrive(findParentContainer(sender));
 });
 
 // Add the event handler to all elements with .numeric-2 
@@ -836,7 +859,7 @@ function getFuelPriceClicked(sender) {
 
     if (!countryCode) { return; }
 
-    requestFuelPrices(countryCode, fuelID);
+    requestFuelPrices(parentContainer.id, countryCode, fuelID);
 }
 
 $(window).on("load", () => {

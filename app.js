@@ -492,7 +492,7 @@ webSocket.on("connection", function connection(ws) {
 
         switch (req.action.trim().toLowerCase()) {
             case "requestmakes":
-                getMakes(ws);
+                getMakes(ws, containerID);
                 break;
 
             case "requestmodels":

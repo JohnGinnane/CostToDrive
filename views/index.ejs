@@ -109,7 +109,7 @@
                         </div>
 
                         <div class="col-5 ps-0">
-                            <select id="select-fuel-eco-unit" class="form-select calc-cost ctd-fuel-eco-unit" onchange="fuelEcoUnitChanged(this)" onfocusin="focusedIn(this)">
+                            <select id="select-fuel-eco-unit" class="form-select calc-cost ctd-fuel-eco-unit" onchange="fuelEcoUnitChanged(this)" onfocus="fuelEcoUnitFocused(this)">
                                 <option value="kmpl">KM/L</option>
                                 <option value="lp100km">L/100KM</option>
                                 <option value="mpguk">MPG (UK)</option>
@@ -129,11 +129,11 @@
                 <div class="col-6">
                     <div class="row">
                         <div class="col-8 pe-0">
-                            <input type="text" id="input-distance" value="1000" class="form-control w-100 numeric-2 calc-cost"/>
+                            <input type="text" id="input-distance" value="1000" class="form-control w-100 numeric-2 calc-cost ctd-distance"/>
                         </div>
                         
                         <div class="col-4 ps-0">
-                            <select id="select-distance-unit" class="form-select calc-cost">
+                            <select id="select-distance-unit" class="form-select calc-cost ctd-distance-unit" onfocus="distanceUnitFocused(this)" onchange="distanceUnitChanged(this)">
                                 <option value="km">KM</option>
                                 <option value="m">M</option>
                             </select>

@@ -6,7 +6,11 @@ const webSocket = new WebSocket('ws://localhost:3001', null, null, null, {reject
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
-    requestMakes();
+
+    // First first cost-to-drive container and request makes for it
+    var firstContainer = $("div.ctd-container:first")[0];
+    
+    requestMakes(firstContainer.id);
     requestCurrencyConversion();
 }
 
@@ -18,6 +22,10 @@ let lastDistanceUnit    = "";
 let currencyConversion  = null;
 
 //#region Functions
+
+function findByID(containerID) {
+    return $("#" + containerID);
+}
 
 function coerceNumber(val) {
     // remove any comma separators
@@ -38,6 +46,7 @@ function getSelectedValue(selectNode) {
 }
 
 function getSelectedFuelEconomyUnit(parentContainer) {
+    var test = $(parentContainer).find("select.ctd-fuel-eco-unit");
     return $(parentContainer).find("select.ctd-fuel-eco-unit").first().val().trim().toLowerCase();
 }
 
@@ -156,8 +165,17 @@ function updateFuelEco(parentContainer, newValue) {
         newValue = coerceNumber($(inputFuelEco).val());
     }
 
+    var selectFuelEcoUnit = $(parentContainer).find("select.ctd-fuel-eco-unit").first()[0];
+    
+    if ($(selectFuelEcoUnit).data("previous-value")) {
+        var preUnit = $(selectFuelEcoUnit).data("previous-value").trim().toLowerCase();
+        var newUnit = $(selectFuelEcoUnit).val().trim().toLowerCase();
+
+        newValue = convertFuelEco(newValue, preUnit, newUnit);
+    }
+    
     if (newValue) {
-        $(inputFuelEco).val(convertFuelEco(newValue, lastFuelEconomyUnit, getSelectedFuelEconomyUnit(parentContainer)).toFixed(2));
+        $(inputFuelEco).val(newValue.toFixed(2));
     }
 }
 
@@ -233,9 +251,6 @@ function findParameterValues(parentContainer) {
     }
 }
 
-function findByID(containerID) {
-    return $("#" + containerID);
-}
 //#endregion
 
 //#region Request Functions
@@ -486,10 +501,10 @@ function clearMakeOptions(container) {
 
 webSocket.onmessage = (msg) => {
     let resp = JSON.parse(msg.data);
-    // console.log(resp);
+    var type = resp.type.trim().toLowerCase();
     var container = findByID(resp.containerID);
 
-    switch (resp.type.trim().toLowerCase()) {
+    switch (type) {
         case "make":
             addNewMake(container, Number(resp.data.MakeID), resp.data.Name);
             break;
@@ -552,7 +567,7 @@ function makeChanged(sender) {
         clearModelOptions(parentContainer);
 
         var selectedParameters = findParameterValues(parentContainer);
-        requestModels(selectedParameters.makeID);
+        requestModels(parentContainer.id, selectedParameters.makeID);
     }
 
 }
@@ -565,8 +580,9 @@ function modelChanged(sender) {
 
         var selectedParameters = findParameterValues(parentContainer);
 
-        requestYears(selectedParameters.makeID,
-                    selectedParameters.modelID);
+        requestYears(parentContainer.id,
+                     selectedParameters.makeID,
+                     selectedParameters.modelID);
     }
 
 }
@@ -579,9 +595,10 @@ function yearChanged(sender) {
 
         var selectedParameters = findParameterValues(parentContainer);
 
-        requestFuelTypes(selectedParameters.makeID,
-                        selectedParameters.modelID,
-                        selectedParameters.year);
+        requestFuelTypes(parentContainer.id,
+                         selectedParameters.makeID,
+                         selectedParameters.modelID,
+                         selectedParameters.year);
     }
 
 }
@@ -594,7 +611,8 @@ function fuelTypeChanged(sender) {
 
         var selectedParameters = findParameterValues(parentContainer);
 
-        requestEngineSizes(selectedParameters.makeID,
+        requestEngineSizes(parentContainer.id,
+                           selectedParameters.makeID,
                            selectedParameters.modelID,
                            selectedParameters.year,
                            selectedParameters.fuelTypeID)
@@ -608,7 +626,8 @@ function engineSizeChanged(sender) {
         var selectedParameters = findParameterValues(parentContainer);
 
         if (selectedParameters) {
-            requestFuelEconomies(selectedParameters.makeID,
+            requestFuelEconomies(parentContainer.id,
+                                 selectedParameters.makeID,
                                  selectedParameters.modelID,
                                  selectedParameters.year,
                                  selectedParameters.fuelTypeID,
@@ -628,8 +647,8 @@ function drivingStyleChanged(sender) {
 
     if (!parentContainer) { return; }
 
-    var avgMotorwayKMPL     = Number(parentContainer.data("avgMotorwayKMPL"));
-    var avgUrbanKMPL        = Number(parentContainer.data("avgUrbanKMPL"));
+    var avgMotorwayKMPL     = Number($(parentContainer).data("avgMotorwayKMPL"));
+    var avgUrbanKMPL        = Number($(parentContainer).data("avgUrbanKMPL"));
     var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
     var drivingStylePercent = Number(sender.value) / 100.00;
     var expectedEconomy = 1;
@@ -645,33 +664,25 @@ function drivingStyleChanged(sender) {
     updateFuelEco(parentContainer, expectedEconomy);
 }
 
-// $("#input-driving-style").on("change", (e) => {
-//     // Interpolate between urban and motorway driving
-//     var economyDifference   = Math.abs(avgMotorwayKMPL - avgUrbanKMPL);
-//     var drivingStylePercent = Number($("#input-driving-style").val()) / 100.00;
-//     var expectedEconomy = 1;
-
-//     if (avgMotorwayKMPL > avgUrbanKMPL) {
-//         expectedEconomy = avgUrbanKMPL    + (economyDifference * drivingStylePercent);
-//     } else {
-//         expectedEconomy = avgMotorwayKMPL + (economyDifference * drivingStylePercent);
-//     }
-
-//     expectedEconomy = convertFuelEco(expectedEconomy, 'kmpl', getSelectedFuelEconomyUnit());
-
-//     updateFuelEco(expectedEconomy);
-// });
-
 // Recalculate if we changed unit of measurement
-$("#select-fuel-eco-unit").on("change", (e) => {
-    var unitOfMeasurement = getSelectedFuelEconomyUnit();
+function fuelEcoUnitChanged(sender) {
+    var parentContainer = findParentContainer(sender);
 
-    if (unitOfMeasurement === lastFuelEconomyUnit) { return; }
+    if (!parentContainer) { return; }
 
-    updateFuelEco();
+    var preUnit = $(sender).data("previous-value").trim().toLowerCase();
+    var newUnit = $(sender).val().trim().toLowerCase();
     
-    lastFuelEconomyUnit = unitOfMeasurement;
-});
+    if (newUnit === preUnit) { return; }
+
+    updateFuelEco(parentContainer);
+    
+    $(sender).data("previous-value", newUnit);
+}
+
+function fuelEcoUnitFocused(sender) {
+    $(sender).data("previous-value", $(sender).val());
+}
 
 // Store the original value when we focus on a numeric field
 $(".numeric-2").on("focusin", function (e) {
@@ -734,18 +745,34 @@ $(".numeric-2").each( function() {
 });
 
 // Handle distance conversion
-$("#select-distance-unit").on("focusin", function(e) {
-    lastDistanceUnit = $(this).val();
-});
+function distanceUnitFocused(sender) {
+    $(sender).data("previous-value", $(sender).val());
+}
 
-$("#select-distance-unit").on("change", function(e) {
-    var newDistanceUnit = $(this).val();
-    var inputDistance = $("#input-distance");
+function distanceUnitChanged(sender) {
+    var parentContainer = findParentContainer(sender);
 
-    var newDistance = convertDistance(inputDistance.val(), lastDistanceUnit, newDistanceUnit);
-    lastDistanceUnit = newDistanceUnit;
-    inputDistance.val(formatNumber(newDistance));
-});
+    if (!parentContainer) { return; }
+
+    // Find the element that holds our distance
+    var inputDistance = $(parentContainer).find("input.ctd-distance").first()[0];
+    
+    if (!inputDistance) { return; }
+
+    // Check if units changed
+    var preUnit = $(sender).data("previous-value").trim().toLowerCase();
+    var newUnit = $(sender).val().trim().toLowerCase();
+    
+    if (preUnit == newUnit) { return; }
+
+    var newDistance = convertDistance($(inputDistance).val(), preUnit, newUnit);
+
+    $(inputDistance).val(formatNumber(newDistance));
+
+    // Set previous unit in case we change unit again while
+    // remaining focused on this element
+    $(sender).data("previous-value", $(sender).val());
+}
 
 // Handle currency conversion
 $(".currency-selector").on("focusin", function(e) {
@@ -801,8 +828,6 @@ $("#button-get-fuel-price").on("click", function(e) {
 });
 
 $(window).on("load", () => {
-    lastFuelEconomyUnit = getSelectedFuelEconomyUnit();
-
     // When we first load the page, re-apply any formatting
     $(".numeric-2").each(numericChanged);
 });

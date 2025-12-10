@@ -129,7 +129,7 @@
                 <div class="col-6">
                     <div class="row">
                         <div class="col-8 pe-0">
-                            <input type="text" id="input-distance" value="1000" class="form-control w-100 numeric-2 calc-cost ctd-distance"/>
+                            <input type="text" id="input-distance" value="1000" class="form-control w-100 numeric-2 calc-cost ctd-distance" onchange="distanceChanged(this)"/>
                         </div>
                         
                         <div class="col-4 ps-0">
@@ -158,7 +158,7 @@
                         </div>
                         
                         <div class="col-4 ps-0">
-                            <button id="button-get-fuel-price" type="button" class="btn btn-primary text-end my-auto">Get Price</button>
+                            <button id="button-get-fuel-price" type="button" class="btn btn-primary text-end my-auto ctd-get-fuel-price" onclick="getFuelPriceClicked(this)">Get Price</button>
                         </div>
                     </div>
                 </div>

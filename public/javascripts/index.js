@@ -179,23 +179,30 @@ function updateFuelEco(parentContainer, newValue) {
     }
 }
 
-function calculateCostToDrive() {
-    var fuelPrice   = $("#input-fuel-price").val();
-    var distance    = $("#input-distance").val();
-    var fuelEconomy = $("#input-fuel-eco").val();
+function calculateCostToDrive(parentContainer) {
+    if (!parentContainer) { return; }
+
+    var fuelPrice      = $(parentContainer).find("input.ctd-fuel-price").first().val();
+    var distance       = $(parentContainer).find("input.ctd-distance").first().val();
+    var fuelEconomy    = $(parentContainer).find("input.ctd-fuel-eco").first().val();
+
+    var preDistUnit    = $(parentContainer).find("input.ctd-distance-unit").first().val();
+    var preFuelEcoUnit = $(parentContainer).find("select.ctd-fuel-eco-unit").first().val();
 
     // Convert values into common units:
     // 1. Distance     -> Kilometres
     // 2. Fuel Economy -> Kilometres per Litre
-    distance = coerceNumber(convertDistance(distance, lastDistanceUnit, "km"));
-    fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, lastFuelEconomyUnit, "kmpl"));
+    distance = coerceNumber(convertDistance(distance, preDistUnit, "km"));
+    fuelEconomy = coerceNumber(convertFuelEco(fuelEconomy, preFuelEcoUnit, "kmpl"));
 
     if (!fuelEconomy) { return; }
 
     var totalLitres = distance / fuelEconomy;
     var totalCost = totalLitres * coerceNumber(fuelPrice);
 
-    $("#input-total-cost").val(formatNumber(totalCost));
+    var inputTotalCost = $(parentContainer).find("input.ctd-total-cost").first();
+
+    $(inputTotalCost).val(formatNumber(totalCost));
 }
 
 function numericChanged(e) {
@@ -744,6 +751,14 @@ $(".numeric-2").each( function() {
     $(this).on("change", numericChanged);
 });
 
+function distanceChanged(sender) {
+    console.log("test");
+    var parentContainer = findParentContainer(sender);
+    if (!parentContainer) { return; }
+
+    calculateCostToDrive(parentContainer);
+}
+
 // Handle distance conversion
 function distanceUnitFocused(sender) {
     $(sender).data("previous-value", $(sender).val());
@@ -812,20 +827,17 @@ $(".currency-selector").on("change", function(e) {
     calculateCostToDrive();
 });
 
-// Request Fuel Price for Country
-$("#button-get-fuel-price").on("click", function(e) {
-    // Check the country, ask server to get fuel price
-    var countryCode = getSelectedValue("#select-country");
-    var fuelID      = getSelectedValue("#select-fuel-type");
+function getFuelPriceClicked(sender) {
+    var parentContainer = findParentContainer(sender);
+    if (!parentContainer) { return; }
 
-    console.log(countryCode);
-    console.log(fuelID);
+    var countryCode = $(parentContainer).find("select.ctd-country").first().val().trim().toUpperCase();
+    var fuelID      = $(parentContainer).find("select.ctd-fuel-type").first().val().trim().toLowerCase();
 
     if (!countryCode) { return; }
 
-    countryCode.trim().toUpperCase();
     requestFuelPrices(countryCode, fuelID);
-});
+}
 
 $(window).on("load", () => {
     // When we first load the page, re-apply any formatting

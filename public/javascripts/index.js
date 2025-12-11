@@ -457,6 +457,8 @@ function updateFuelPrice(container, fuelPrices) {
 
                 fuelPrice = convertCurrency(fuelPrice, fuelCurrency, selectedCurrency);
                 $(inputFuelPrice).val(formatNumber(fuelPrice));
+
+                calculateCostToDrive(container);
             }
         });
     } catch (ex) {

@@ -89,7 +89,7 @@ async function getFuelPrice(countryCode) {
             const data       = [];
             const currencies = [];
 
-            var Timestamp = null;
+            var Timestamp    = null;
 
             // We're looking for the table that shares a div node with 
             // <a id="prices">

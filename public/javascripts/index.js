@@ -23,8 +23,10 @@ let currencyConversion  = null;
 
 //#region Functions
 
-function findByID(containerID) {
-    return $("#" + containerID);
+function findByID(ID) {
+    var result = $("#" + ID).first();
+
+    return result;
 }
 
 function coerceNumber(val) {
@@ -41,8 +43,21 @@ function coerceNumber(val) {
     }
 }
 
-function getSelectedValue(selectNode) {
-    return $(selectNode).find(":selected").val().trim();
+function getFirstNode(container, query) {
+    if (!container) { return; }
+    if (!query) { return; }
+
+    var result = $(container).find(query).first();
+
+    if (!result) { return; }
+
+    if (result.length) {
+        if (result.length > 0) {
+            result = result[0];
+        }
+    }
+
+    return result;
 }
 
 function getSelectedFuelEconomyUnit(parentContainer) {
@@ -421,27 +436,17 @@ function addNewEngineSize(container, engineSize) {
 }
 
 function updateFuelPrice(container, fuelPrices) {
-    console.log(fuelPrices);
-
     if (!fuelPrices) {
         return;
     }
 
     try {
-        console.log($(container).find("select.ctd-fuel-type").first());
-        
-        var selectedFuelTypeID = $(container).find("select.ctd-fuel-type").first().find(":selected").val().trim();
-        var selectedCurrency   = $(container).find("select.ctd-price-currency").first().find(":selected").val().trim();
+        var selectedFuelTypeID = $(container).find("select.ctd-fuel-type :selected").first().val();
+        var selectedCurrency   = $(container).find("select.ctd-price-currency :selected").first().val();
         var inputFuelPrice     = $(container).find("input.ctd-fuel-price").first();
-        
-        console.log({
-            fuelID: selectedFuelTypeID,
-            currency: selectedCurrency
-        });
-        
+
         Object.keys(fuelPrices.prices).forEach((fuelName) => {
             var fuelPrice = fuelPrices.prices[fuelName];
-            console.log(fuelPrice);
 
             if (!fuelPrice) { return; }
             if (!fuelPrice.fuelID) { return; }
@@ -555,13 +560,7 @@ webSocket.onmessage = (msg) => {
             
             // Manually trigger the "change" event so we can
             // calculate the eco
-            var inputDrivingStyle = $(container).find("input.ctd-driving-style").first();
-
-            if (inputDrivingStyle.length) {
-                if (inputDrivingStyle.length > 0) {
-                    inputDrivingStyle = inputDrivingStyle[0];
-                }
-            }
+            var inputDrivingStyle = getFirstNode(container, "input.ctd-driving-style");
 
             if (inputDrivingStyle) {
                 drivingStyleChanged(inputDrivingStyle);
@@ -679,8 +678,6 @@ function engineSizeChanged(sender) {
 // Whenever the driving style range changes
 // we need to recalculate the fuel economy
 function drivingStyleChanged(sender) {
-    console.log(sender);
-
     var parentContainer = findParentContainer(sender);
 
     if (!parentContainer) { return; }
@@ -787,7 +784,6 @@ $(".numeric-2").each( function() {
 });
 
 function distanceChanged(sender) {
-    console.log("test");
     var parentContainer = findParentContainer(sender);
     if (!parentContainer) { return; }
 

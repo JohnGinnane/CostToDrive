@@ -13,6 +13,12 @@ a {
     border: 1px solid red;
 }
 
+.card-body {
+    min-height: 300px;
+    min-width: 500px;
+    margin-right: 5px;
+}
+
 #input-driving-style::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -65,7 +71,13 @@ a {
 
 .ctd-country { }
 
-.ctd-get-fuel-price { }
+.ctd-get-fuel-price {
+    font-size: smaller;
+    height: 100%;
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
 
 .ctd-price-currency { }
 

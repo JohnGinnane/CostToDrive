@@ -70,6 +70,7 @@ function IDToName(ID) {
 }
 
 async function getFuelPrice(countryCode) {
+    console.log(countryCode);
     if (!countryCode) { return; }
     var country = countryURLs[countryCode.trim().toUpperCase()];
 

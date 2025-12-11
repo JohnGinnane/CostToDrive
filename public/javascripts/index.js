@@ -427,25 +427,37 @@ function updateFuelPrice(container, fuelPrices) {
         return;
     }
 
-    var selectedFuelTypeID = $(container).find("select.ctd-fuel-type").first().find(":selected").val().trim();
-    var selectedCurrency   = $(container).find("select.ctd-price-currency").first().find(":selected").val().trim();
-    var inputFuelPrice     = $(container).find("input.ctd-fuel-price").first();
-    
-    Object.keys(fuelPrices.prices).forEach((fuelName) => {
-        var fuelPrice = fuelPrices.prices[fuelName];
-        console.log(fuelPrice);
+    try {
+        console.log($(container).find("select.ctd-fuel-type").first());
+        
+        var selectedFuelTypeID = $(container).find("select.ctd-fuel-type").first().find(":selected").val().trim();
+        var selectedCurrency   = $(container).find("select.ctd-price-currency").first().find(":selected").val().trim();
+        var inputFuelPrice     = $(container).find("input.ctd-fuel-price").first();
+        
+        console.log({
+            fuelID: selectedFuelTypeID,
+            currency: selectedCurrency
+        });
+        
+        Object.keys(fuelPrices.prices).forEach((fuelName) => {
+            var fuelPrice = fuelPrices.prices[fuelName];
+            console.log(fuelPrice);
 
-        if (!fuelPrice) { return; }
-        if (!fuelPrice.fuelID) { return; }
+            if (!fuelPrice) { return; }
+            if (!fuelPrice.fuelID) { return; }
 
-        if (fuelPrice.fuelID == selectedFuelTypeID) {
-            var fuelCurrency = fuelPrice.currency;
-            var fuelPrice    = Number(fuelPrice.price);
+            if (fuelPrice.fuelID == selectedFuelTypeID) {
+                var fuelCurrency = fuelPrice.currency;
+                var fuelPrice    = Number(fuelPrice.price);
 
-            fuelPrice = convertCurrency(fuelPrice, fuelCurrency, selectedCurrency);
-            $(inputFuelPrice).val(formatNumber(fuelPrice));
-        }
-    });
+                fuelPrice = convertCurrency(fuelPrice, fuelCurrency, selectedCurrency);
+                $(inputFuelPrice).val(formatNumber(fuelPrice));
+            }
+        });
+    } catch (ex) {
+        console.log("Error trying to update fuel price:");
+        console.error(ex);
+    }
 }
 
 //#endregion
@@ -565,7 +577,7 @@ webSocket.onmessage = (msg) => {
         case "fuelprices":
             // When we receive fuel data, we need to check what selected
             // fuel type, and currency, and then place value into field
-            updateFuelPrice(resp.data);
+            updateFuelPrice(container, resp.data);
             break;
 
         default:

@@ -279,10 +279,15 @@ function findParameterValues(parentContainer) {
 }
 
 function addCompareClicked(sender) {
-    var newCard = $("#div-test-container").clone();
+    var newCard = $("#div-container").clone();
     $(newCard).find("[id]:not([id=''])").each((k, v) => {
         $(v).attr("id", generateNewID(4));
     });
+
+    // Make the delete button visible 
+    console.log("test");
+    console.log($(newCard).find("button.btn-delete-card"));
+    $(newCard).find("button.btn-delete-card").css("visibility", "visible");
 
     // Clear out any existing parameters
     // then fetch makes again
@@ -947,6 +952,14 @@ function getFuelPriceClicked(sender) {
     if (!countryCode) { return; }
 
     requestFuelPrices(parentContainer.id, countryCode, fuelID);
+}
+
+function deleteCardClicked(sender) {
+    var parentContainer = findParentContainer(sender);
+
+    if (!parentContainer) { return; }
+
+    $(parentContainer).remove();
 }
 
 $(window).on("load", () => {

@@ -22,7 +22,11 @@
 
         <div id="div-card-display" class="d-flex flex-row flex-nowrap align-items-center  col-8 scrolling-wrapper row mx-0 flex-nowrap ">
             
-            <div id="div-test-container" class="card card-body ctd-container">
+            <div id="div-container" class="card card-body ctd-container">
+                <div class="div-delete-card float-end pull-end">
+                    <button class="btn-delete-card position-absolute top-0 end-0" style="visibility: hidden;" onclick="deleteCardClicked(this)">X</button>
+                </div>
+
                 <div class="row d-flex justify-content-center align-items-center">
                     <!-- Make -->
                     <div class="justify-content-center h-100 row m-1">

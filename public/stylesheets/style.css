@@ -86,3 +86,10 @@ a {
 .ctd-fuel-price { }
 
 .ctd-total-cost { }
+
+#btn-add-compare {
+    font-size: smaller;
+    display: grid;
+    place-items: center;
+    vertical-align: middle;
+}

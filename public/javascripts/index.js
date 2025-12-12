@@ -61,7 +61,6 @@ function getFirstNode(container, query) {
 }
 
 function getSelectedFuelEconomyUnit(parentContainer) {
-    var test = $(parentContainer).find("select.ctd-fuel-eco-unit");
     return $(parentContainer).find("select.ctd-fuel-eco-unit").first().val().trim().toLowerCase();
 }
 
@@ -278,7 +277,53 @@ function findParameterValues(parentContainer) {
     }
 }
 
+function addCompareClicked(sender) {
+    var originalCard = $("#div-test-container").clone();
+    $(originalCard).find("[id]:not([id=''])").each((k, v) => {
+        console.log($(this).attr("id"));
+
+        $(this).attr("id", generateNewID(4));
+
+        console.log($(this).attr("id"));
+    });
+
+    console.log(originalCard);
+
+    $("#div-card-display").append(originalCard);
+}
 //#endregion
+
+
+
+
+//#region ID Generation
+
+const existingIDs = [];
+
+function generateNewID(length) {
+    length = length || 4;
+
+    let newID = "";
+
+    // Keep generating new IDs until we find one that is unique
+    while (newID == "" || existingIDs.find(x => x.id == newID)) {
+        // Keep appending the new ID until it's long enough
+        while (newID.length < length) {
+            newID += self.crypto.randomUUID().replaceAll("-", "");
+        }
+        
+        // Then truncate to match length
+        newID = newID.substring(1, length+1); // Add 1 as substring doesn't include last character
+    }
+
+    return newID;
+}
+
+//#endregion
+
+
+
+
 
 //#region Request Functions
 
@@ -371,6 +416,10 @@ function requestFuelPrices(containerID, countryCode, fuelID) {
 }
 
 //#endregion
+
+
+
+
 
 //#region Response Functions
 
@@ -469,6 +518,10 @@ function updateFuelPrice(container, fuelPrices) {
 
 //#endregion
 
+
+
+
+
 //#region Clear Selection
 // Define last selector function first
 // then each subsequent function
@@ -527,6 +580,10 @@ function clearMakeOptions(container) {
 }
 
 //#endregion
+
+
+
+
 
 //#region Websocket Response
 
@@ -587,6 +644,10 @@ webSocket.onmessage = (msg) => {
 }
 
 //#endregion
+
+
+
+
 
 //#region Selection Changed
 
@@ -674,6 +735,10 @@ function engineSizeChanged(sender) {
 }
 
 //#endregion
+
+
+
+
 
 //#region Parameter Changed
 

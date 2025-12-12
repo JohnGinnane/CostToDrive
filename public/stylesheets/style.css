@@ -93,3 +93,7 @@ a {
     place-items: center;
     vertical-align: middle;
 }
+
+.scrolling-wrapper{
+    overflow-x: auto;
+}

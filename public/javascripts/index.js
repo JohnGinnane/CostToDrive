@@ -278,18 +278,22 @@ function findParameterValues(parentContainer) {
 }
 
 function addCompareClicked(sender) {
-    var originalCard = $("#div-test-container").clone();
-    $(originalCard).find("[id]:not([id=''])").each((k, v) => {
-        console.log($(this).attr("id"));
-
-        $(this).attr("id", generateNewID(4));
-
-        console.log($(this).attr("id"));
+    var newCard = $("#div-test-container").clone();
+    $(newCard).find("[id]:not([id=''])").each((k, v) => {
+        $(v).attr("id", generateNewID(4));
     });
 
-    console.log(originalCard);
+    // Clear out any existing parameters
+    // then fetch makes again
+    $(newCard).attr("id", generateNewID(4));
 
-    $("#div-card-display").append(originalCard);
+    console.log(newCard);
+
+    clearMakeOptions(newCard);
+
+    $("#div-card-display").append(newCard);
+
+    requestMakes(newCard.attr("id"));
 }
 //#endregion
 
@@ -340,6 +344,8 @@ function requestMakes(containerID) {
         action:      "requestMakes",
         containerID: containerID
     }
+
+    console.log(req);
 
     webSocket.send(JSON.stringify(req));
 }

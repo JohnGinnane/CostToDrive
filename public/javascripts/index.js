@@ -10,6 +10,7 @@ webSocket.onopen = (event) => {
     // First first cost-to-drive container and request makes for it
     var firstContainer = $("div.ctd-container:first")[0];
     
+    addCardHandlers(firstContainer);
     requestMakes(firstContainer.id);
     requestCurrencyConversion();
 }
@@ -292,6 +293,8 @@ function addCompareClicked(sender) {
     clearMakeOptions(newCard);
 
     $("#div-card-display").append(newCard);
+
+    addCardHandlers(newCard);
 
     requestMakes(newCard.attr("id"));
 }
@@ -792,69 +795,110 @@ function fuelEcoUnitFocused(sender) {
     $(sender).data("previous-value", $(sender).val());
 }
 
-// Store the original value when we focus on a numeric field
-$(".numeric-2").on("focusin", function (e) {
-    $(this).data("previous-value", $(this).val());
-});
+function addCardHandlers(container) {
+    // Store the original value when we focus on a numeric field
+    $(container).find(".numeric-2").on("focusin", function (e) {
+        $(this).data("previous-value", $(this).val());
+    });
 
-// Format any fields that are "Numeric" to look like numbers
-$(".numeric-2").on("keydown", function (e) {
-    //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
+    // Format any fields that are "Numeric" to look like numbers
+    $(container).find(".numeric-2").on("keydown", function (e) {
+        //console.log("keydown: " + e.keyCode + " => " + String.fromCharCode(e.keyCode));
 
-    if (e.ctrlKey)  { return; }
-    if (e.shiftKey || e.keyCode == 16 ) { 
-        e.preventDefault();
-        return;
-    }
+        if (e.ctrlKey)  { return; }
+        if (e.shiftKey || e.keyCode == 16 ) { 
+            e.preventDefault();
+            return;
+        }
 
-    // Only allow these keys
-    if ((e.keyCode >=  48 && e.keyCode <=  57) || 
-        (e.keyCode >=  96 && e.keyCode <= 105) || 
-        (e.keyCode >= 112 && e.keyCode <= 123) ||
-         e.keyCode ==   8 ||  // Backspace
-         e.keyCode ==   9 ||  // Tab
-         e.keyCode ==  35 ||  // End
-         e.keyCode ==  36 ||  // Home
-         e.keyCode ==  37 ||  // Left arrow
-         e.keyCode ==  38 ||  // Up arrow
-         e.keyCode ==  39 ||  // Right arrow
-         e.keyCode ==  40 ||  // Down arrow 
-         e.keyCode ==  44 ||  // Print Screen
-         e.keyCode ==  46 ||  // Delete key
-         e.keyCode == 109 ||  // Num pad minus symbol
-         e.keyCode == 110 ||  // Num pad decimal place
-         e.keyCode == 172 ||  // Num pad minus symbol
-         e.keyCode == 188 ||  // Comma
-         e.keyCode == 190 ) { // Decimal place
-        // Good
-    } else {
-        // Any other non-numeric 
-        e.preventDefault();
-    }
+        // Only allow these keys
+        if ((e.keyCode >=  48 && e.keyCode <=  57) || 
+            (e.keyCode >=  96 && e.keyCode <= 105) || 
+            (e.keyCode >= 112 && e.keyCode <= 123) ||
+            e.keyCode ==   8 ||  // Backspace
+            e.keyCode ==   9 ||  // Tab
+            e.keyCode ==  35 ||  // End
+            e.keyCode ==  36 ||  // Home
+            e.keyCode ==  37 ||  // Left arrow
+            e.keyCode ==  38 ||  // Up arrow
+            e.keyCode ==  39 ||  // Right arrow
+            e.keyCode ==  40 ||  // Down arrow 
+            e.keyCode ==  44 ||  // Print Screen
+            e.keyCode ==  46 ||  // Delete key
+            e.keyCode == 109 ||  // Num pad minus symbol
+            e.keyCode == 110 ||  // Num pad decimal place
+            e.keyCode == 172 ||  // Num pad minus symbol
+            e.keyCode == 188 ||  // Comma
+            e.keyCode == 190 ) { // Decimal place
+            // Good
+        } else {
+            // Any other non-numeric 
+            e.preventDefault();
+        }
 
-    // Does the current value already have a full stop?
-    var curValue = $(this).val();
+        // Does the current value already have a full stop?
+        var curValue = $(this).val();
 
-    if (!curValue) { return; }
+        if (!curValue) { return; }
 
-    if (curValue.indexOf(".") > 0 && (e.keyCode == 190 || e.keyCode == 110)) {
-        e.preventDefault();
-    }
-});
+        if (curValue.indexOf(".") > 0 && (e.keyCode == 190 || e.keyCode == 110)) {
+            e.preventDefault();
+        }
+    });
 
-// Recalculate cost if any of these fields change
-$(".calc-cost").on("change", function(e) {
-    if (!e) { return; }
-    var sender = e.target;
-    if (!sender) { return; }
+    // Recalculate cost if any of these fields change
+    $(container).find(".calc-cost").on("change", function(e) {
+        if (!e) { return; }
+        var sender = e.target;
+        if (!sender) { return; }
 
-    calculateCostToDrive(findParentContainer(sender));
-});
+        calculateCostToDrive(findParentContainer(sender));
+    });
 
-// Add the event handler to all elements with .numeric-2 
-$(".numeric-2").each( function() {
-    $(this).on("change", numericChanged);
-});
+    // Add the event handler to all elements with .numeric-2 
+    $(container).find(".numeric-2").each( function() {
+        $(this).on("change", numericChanged);
+    });
+
+    // Handle currency conversion
+    $(container).find(".currency-selector").on("focusin", function(e) {
+        $(this).data("previous-value", $(this).val());
+    });
+
+    $(container).find(".currency-selector").on("change", function(e) {
+        var previousCurrency = $(this).data("previous-value").trim().toUpperCase();
+        var newCurrency      = $(this).val().trim().toUpperCase();
+        var thisID           = e.target.id;
+
+        if (previousCurrency == newCurrency) { return;  }
+
+        // Set our previous currency
+        $(this).data("previous-value", newCurrency);
+
+        if (currencyConversion) {
+            // Get list of all currency holding fields and convert them
+            $(".currency-field").each((k, v) => {
+                //console.log(`(${v.id}) ${previousCurrency} ${v.value} -> ${newCurrency}`);
+                var curValue = v.value;
+                var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
+
+                if (newValue) { 
+                    v.value = formatNumber(newValue);
+                }
+            });
+        }
+
+        // Apply the change to all other currency selectors
+        $(container).find(".currency-selector").each((k, v) => {
+            if (v.id != thisID) {
+                v.value = newCurrency;
+            }
+        });
+
+        calculateCostToDrive();
+    });
+
+}
 
 function distanceChanged(sender) {
     var parentContainer = findParentContainer(sender);
@@ -892,44 +936,6 @@ function distanceUnitChanged(sender) {
     // remaining focused on this element
     $(sender).data("previous-value", $(sender).val());
 }
-
-// Handle currency conversion
-$(".currency-selector").on("focusin", function(e) {
-    $(this).data("previous-value", $(this).val());
-});
-
-$(".currency-selector").on("change", function(e) {
-    var previousCurrency = $(this).data("previous-value").trim().toUpperCase();
-    var newCurrency      = $(this).val().trim().toUpperCase();
-    var thisID           = e.target.id;
-
-    if (previousCurrency == newCurrency) { return;  }
-
-    // Set our previous currency
-    $(this).data("previous-value", newCurrency);
-
-    if (currencyConversion) {
-        // Get list of all currency holding fields and convert them
-        $(".currency-field").each((k, v) => {
-            //console.log(`(${v.id}) ${previousCurrency} ${v.value} -> ${newCurrency}`);
-            var curValue = v.value;
-            var newValue = convertCurrency(curValue, previousCurrency, newCurrency);
-
-            if (newValue) { 
-                v.value = formatNumber(newValue);
-            }
-        });
-    }
-
-    // Apply the change to all other currency selectors
-    $(".currency-selector").each((k, v) => {
-        if (v.id != thisID) {
-            v.value = newCurrency;
-        }
-    });
-
-    calculateCostToDrive();
-});
 
 function getFuelPriceClicked(sender) {
     var parentContainer = findParentContainer(sender);

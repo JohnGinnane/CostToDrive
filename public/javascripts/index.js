@@ -285,19 +285,22 @@ function addCompareClicked(sender) {
     });
 
     // Make the delete button visible 
-    console.log("test");
-    console.log($(newCard).find("button.btn-delete-card"));
     $(newCard).find("button.btn-delete-card").css("visibility", "visible");
 
     // Clear out any existing parameters
     // then fetch makes again
     $(newCard).attr("id", generateNewID(4));
 
-    console.log(newCard);
-
     clearMakeOptions(newCard);
 
     $("#div-card-display").append(newCard);
+
+    // Check if we need to use a scroll bar
+    // Iterate over existing cards and sum up width
+    // if it's larger than display then we need a scroll bar
+    // Browser will make the scroll bar appear but we 
+    // need to move our labels instead of duplicating them
+    
 
     addCardHandlers(newCard);
 
@@ -352,8 +355,6 @@ function requestMakes(containerID) {
         action:      "requestMakes",
         containerID: containerID
     }
-
-    console.log(req);
 
     webSocket.send(JSON.stringify(req));
 }

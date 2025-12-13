@@ -16,13 +16,142 @@
 <body id="ctd-body">
     <div class="container-fluid py-2 row">
         
-        <div class="col-2 rb">
+        <div id="div-fixed-labels" class="my-0 py-0 col-2 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
+            <div class="card card-labels mx-auto my-0 py-0">
+                <div class="row d-flex justify-content-center align-items-center py-0 my-0">
+                    <!-- Make -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select class="form-select" style="visibility: hidden;"></select>
+                        </div> 
 
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Make:</p>
+                        </div>
+                    </div>
+
+                    <!-- Model -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Model:</p>
+                        </div>
+                    </div>
+
+                    <!-- Year -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Year:</p>
+                        </div>
+                    </div>
+
+                    <!-- Fuel Type -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Fuel Type:</p>
+                        </div>
+                    </div>
+
+                    <!-- Engine Size -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Engine Size:</p>
+                        </div>
+                    </div>
+
+                    <!-- Driving Style Slider -->
+                    <div class="justify-content-center h-100 row m-1">
+
+                        <div class="col-1 row mx-0">
+                            <div class="col-2 my-auto p-1">
+                                <img src="/images/emoji-cityscape-w10.png" class="float-end" width="40" style="visibility: hidden;"/>
+                            </div>
+                        </div>
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Driving Style:</p>
+                        </div>
+                    </div>
+
+                    <!-- Fuel Economy -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Economy:</p>
+                        </div>
+                    </div>
+
+                    <!-- Driving Distance -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Distance:</p>
+                        </div>
+                    </div>
+
+                    <!-- Country -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Country:</p>
+                        </div>
+                    </div>
+
+
+                    <!-- Cost of Fuel -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Fuel Price:</p>
+                        </div>
+                    </div>
+
+                    <hr class="m-3 col-10">
+
+                    <!-- Total Cost -->
+                    <div class="justify-content-center h-100 row m-1">
+                        <div class="col-1">
+                            <select id="" class="form-select" style="visibility: hidden;"></select>
+                        </div> 
+
+                        <div class="col-10 my-auto p-0">
+                            <p class="text-end h4 my-auto">Cost to Drive:</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
 
-        <div id="div-card-display" class="d-flex flex-row flex-nowrap align-items-center  col-8 scrolling-wrapper row mx-0 flex-nowrap ">
+        <div id="div-card-display" class="col-8 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
             
-            <div id="div-container" class="card card-body ctd-container">
+            <div id="div-container" class="card card-body ctd-container mx-auto">
                 <div class="div-delete-card float-end pull-end">
                     <button class="btn-delete-card position-absolute top-0 end-0" style="visibility: hidden;" onclick="deleteCardClicked(this)">X</button>
                 </div>
@@ -95,16 +224,22 @@
 
                     <!-- Driving Style Slider -->
                     <div class="justify-content-center h-100 row m-1">
-                        <div class="col-2 my-auto p-1">
-                            <img src="/images/emoji-cityscape-w10.png" class="float-end" width="50"/>
+                        <div class="col-4 my-auto p-0">
+                            <p class="text-end h4 my-auto">Driving Style:</p>
                         </div>
 
-                        <div class="col-8 my-auto p-0">
-                            <input id="input-driving-style" min="0" max="100" step="1" value="50" class="form-range w-100 calc-cost ctd-driving-style" type="range" onchange="drivingStyleChanged(this)"/>
-                        </div>
+                        <div class="col-8 row mx-0">
+                            <div class="col-2 my-auto p-1">
+                                <img src="/images/emoji-cityscape-w10.png" class="float-end" width="40"/>
+                            </div>
 
-                        <div class="col-2 my-auto p-1">
-                            <img src="/images/emoji-motorway-w10.png" class="float-start" width="50"/>
+                            <div class="col-8 my-auto p-1">
+                                <input id="input-driving-style" min="0" max="100" step="1" value="50" class="form-range w-100 calc-cost ctd-driving-style" type="range" onchange="drivingStyleChanged(this)"/>
+                            </div>
+
+                            <div class="col-2 my-auto p-1">
+                                <img src="/images/emoji-motorway-w10.png" class="float-start" width="40"/>
+                            </div>
                         </div>
                     </div>
 
@@ -226,11 +361,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
+            </div>            
         </div>
 
-        <div class="col-2 d-flex align-items-center rb">
+        <div class="col-2 d-flex align-items-center">
             <button id="btn-add-compare" class="btn btn-primary" onclick="addCompareClicked(this)">
                 <h6 class="my-auto">Add to<br>Compare</h6>
             </button>

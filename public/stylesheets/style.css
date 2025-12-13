@@ -21,6 +21,13 @@ a {
     margin-right: 5px;
 }
 
+.card-labels {
+    min-height: 300px;
+    margin-right: 0px;
+    border: 0px;
+    background-color: beige;
+}
+
 #input-driving-style::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -113,4 +120,13 @@ a {
 
 .btn-delete-card:hover {
 
+}
+
+#div-fixed-labels {
+    position: relative;
+    top: -9px;
+}
+
+#div-card-display {
+  overflow-x: scroll;
 }

@@ -278,6 +278,54 @@ function findParameterValues(parentContainer) {
     }
 }
 
+function checkFixedLabels() {
+    var totalWidth = 0;
+
+    $("#div-card-display").find("div.ctd-container").each(function(k, v) {
+        totalWidth += $(v).width();
+    });
+
+    var displayWidth = $("#div-card-display").width();
+
+    if (totalWidth > displayWidth) {
+        var narrowWidth = "400px";
+
+        // Too many cards, hide card labels to fit
+        $("#div-card-display").find("div.ctd-card-label").each(function(k, v) {
+            $(v).hide();
+            $(v).removeClass("col-4");
+            $(v).addClass("col-1");
+
+            $(v).siblings().first().removeClass("col-8");
+            $(v).siblings().first().addClass("col-11");
+        });
+
+        $("#div-card-display").find("div.card-body").each(function(k, v) {
+            $(v).css("min-width", narrowWidth);
+            $(v).css("width", narrowWidth);
+            $(v).css("max-width", narrowWidth);
+        });
+    } else {
+        var normalWidth = "550px";
+
+        // Enough space to show labels on each card
+        $("#div-card-display").find("div.ctd-card-label").each(function(k, v) {
+            $(v).show();
+            $(v).removeClass("col-1");
+            $(v).addClass("col-4");
+
+            $(v).siblings().first().removeClass("col-11");
+            $(v).siblings().first().addClass("col-8");
+        });
+
+        $("#div-card-display").find("div.card-body").each(function(k, v) {
+            $(v).css("min-width", normalWidth);
+            $(v).css("width", normalWidth);
+            $(v).css("max-width", normalWidth);
+        });
+    }
+}
+
 function addCompareClicked(sender) {
     var newCard = $("#div-container").clone();
     $(newCard).find("[id]:not([id=''])").each((k, v) => {
@@ -300,7 +348,7 @@ function addCompareClicked(sender) {
     // if it's larger than display then we need a scroll bar
     // Browser will make the scroll bar appear but we 
     // need to move our labels instead of duplicating them
-    
+    checkFixedLabels();
 
     addCardHandlers(newCard);
 
@@ -961,6 +1009,8 @@ function deleteCardClicked(sender) {
     if (!parentContainer) { return; }
 
     $(parentContainer).remove();
+
+    checkFixedLabels();
 }
 
 $(window).on("load", () => {

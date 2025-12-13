@@ -134,6 +134,8 @@ db.getCurrencyRates().then((res) => {
         }
     }
 
+    fetchNewRates = true;
+
     if (fetchNewRates) {
         log("Fetching new exchange rates!");
 
@@ -153,6 +155,8 @@ db.getCurrencyRates().then((res) => {
                 // 3. Insert into the database
                 // This whole process really needs its own class...
                 resp.on("end", () => {
+                    //console.log(data);
+
                     var newCurrencyData = JSON.parse(data);
                     
                     // This "data" is expected to look like

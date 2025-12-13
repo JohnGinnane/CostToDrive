@@ -16,6 +16,7 @@
 <body id="ctd-body">
     <div class="container-fluid py-2 row">
         
+        <!-- Fixed labels when many cards are present-->
         <div id="div-fixed-labels" class="my-0 py-0 col-2 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
             <div class="card card-labels mx-auto my-0 py-0">
                 <div class="row d-flex justify-content-center align-items-center py-0 my-0">
@@ -149,13 +150,16 @@
             </div>
         </div>
 
+        <!-- Main Display -->
         <div id="div-card-display" class="col-8 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
             
             <div id="div-container" class="card card-body ctd-container mx-auto">
+                <!-- Top right delete card button -->
                 <div class="div-delete-card float-end pull-end">
                     <button class="btn-delete-card position-absolute top-0 end-0" style="visibility: hidden;" onclick="deleteCardClicked(this)">X</button>
                 </div>
 
+                <!-- Main Card-->
                 <div class="row d-flex justify-content-center align-items-center">
                     <!-- Make -->
                     <div class="justify-content-center h-100 row m-1">
@@ -289,7 +293,7 @@
                         </div>
                     </div>
 
-                    <!-- Get Fuel Price -->
+                    <!-- Country -->
                     <div class="justify-content-center h-100 row m-1">
                         <div class="col-4 my-auto p-0 ctd-card-label">
                             <p class="text-end h4 my-auto">Country:</p>
@@ -364,6 +368,7 @@
             </div>            
         </div>
 
+        <!-- Button to add more cards -->
         <div class="col-2 d-flex align-items-center">
             <button id="btn-add-compare" class="btn btn-primary" onclick="addCompareClicked(this)">
                 <h6 class="my-auto">Add to<br>Compare</h6>

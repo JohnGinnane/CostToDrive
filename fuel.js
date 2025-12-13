@@ -84,7 +84,7 @@ async function getFuelPrice(countryCode) {
 
     return new Promise((resolve, reject) => {
         axios.get(country.URL).then((resp) => {
-            const $ = cheerio.load(resp.data);
+            const $          = cheerio.load(resp.data);
             const headers    = [];
             const data       = [];
             const currencies = [];

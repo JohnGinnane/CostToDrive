@@ -14,10 +14,16 @@
     <link rel="icon" href="/images/emoji-car-w10-32x32.png" type="image/x-icon">
 </head>
 <body id="ctd-body">
+    <div class="row">
+        <div class="col-xs-0  col-sm-6 col-md-6 col-lg-4 col-xl-3 rb">labels</div>
+        <div class="col-xs-10 col-sm-5 col-md-5 col-lg-7 col-xl-8 rb">cards</div>
+        <div class="col-xs-2  col-sm-1 col-md-1 col-lg-1 col-xl-1 rb">button</div>
+    </div>
+
     <div class="container-fluid py-2 row">
         
         <!-- Fixed labels when many cards are present-->
-        <div id="div-fixed-labels" class="my-0 py-0 col-2 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
+        <div id="div-fixed-labels" class="col-sm-6 col-md-6 col-lg-4 col-xl-3 py-0 my-0 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
             <div class="card card-labels mx-auto my-0 py-0">
                 <div class="row d-flex justify-content-center align-items-center py-0 my-0">
                     <!-- Make -->
@@ -151,7 +157,7 @@
         </div>
 
         <!-- Main Display -->
-        <div id="div-card-display" class="col-8 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
+        <div id="div-card-display" class="col-sm-5 col-md-5 col-lg-7 col-xl-8 d-flex flex-row flex-nowrap align-items-center scrolling-wrapper row mx-0 px-2 flex-nowrap">
             
             <div id="div-container" class="card card-body ctd-container mx-auto">
                 <!-- Top right delete card button -->
@@ -369,7 +375,7 @@
         </div>
 
         <!-- Button to add more cards -->
-        <div class="col-2 d-flex align-items-center">
+        <div id="div-add-card"     class="col-sm-1 col-md-1 col-lg-1 col-xl-1 d-flex align-items-center">
             <button id="btn-add-compare" class="btn btn-primary" onclick="addCompareClicked(this)">
                 <h6 class="my-auto">Add to<br>Compare</h6>
             </button>

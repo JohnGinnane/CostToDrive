@@ -24,6 +24,14 @@ a {
     margin-right: 5px;
 }
 
+@media screen and (max-width: 1100px) {
+    .parameter-body {
+        min-width: 300px;
+        width: 300px;
+        max-width: 300px;
+    }
+}
+
 .card-labels {
     min-height: 300px;
     margin-right: 0px;
@@ -75,18 +83,27 @@ a {
 
 .ctd-fuel-eco { }
 
-.ctd-fuel-eco-unit { }
+.ctd-fuel-eco-unit {
+    min-width: 120px;
+    width: 120px;
+    max-width: 120px;
+}
 
 .ctd-distance { }
 
-.ctd-distance-unit { }
+.ctd-distance-unit {
+    min-width: 120px;
+    width: 120px;
+    max-width: 120px;}
 
 .ctd-country { }
 
 .ctd-get-fuel-price {
     font-size: smaller;
     height: 100%;
-    width: 100%;
+    width: 85px;
+    -ms-flex: 0 0 85px;
+    flex: 0 0 85px;
     display: grid;
     place-items: center;
 }
@@ -136,15 +153,13 @@ a {
 }
 
 #div-add-card {
-    width: 90px;
-    max-width: 90px;
-    min-width: 90px;
+    width: 50px;
+    max-width: 50px;
+    min-width: 50px;
 }
 
-@media (max-width: 1210px) {
-    #div-add-card {
-        width: 90px;
-        max-width: 90px;
-        min-width: 90px;
-    }
+.currency-selector {    
+    width: 80px;
+    max-width: 80px;
+    min-width: 80px;
 }

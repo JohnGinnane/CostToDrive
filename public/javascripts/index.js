@@ -278,11 +278,9 @@ function findParameterValues(parentContainer) {
     }
 }
 
-function checkFixedLabels() {
+function resizeCards() {
     var totalWidth = 0;
-
-    return;
-
+    
     $("#div-card-display").find("div.ctd-container").each(function(k, v) {
         totalWidth += $(v).width();
     });
@@ -350,7 +348,7 @@ function addCompareClicked(sender) {
     // if it's larger than display then we need a scroll bar
     // Browser will make the scroll bar appear but we 
     // need to move our labels instead of duplicating them
-    checkFixedLabels();
+    resizeCards();
 
     addCardHandlers(newCard);
 
@@ -1013,7 +1011,7 @@ function deleteCardClicked(sender) {
 
     $(parentContainer).remove();
 
-    checkFixedLabels();
+    resizeCards();
 }
 
 $(window).on("load", () => {

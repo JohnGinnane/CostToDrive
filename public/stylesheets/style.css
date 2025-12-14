@@ -15,6 +15,9 @@ a {
 
 .card-body {
     min-height: 300px;
+}
+
+.parameter-body {
     min-width: 550px;
     width: 550px;
     max-width: 550px;
@@ -122,11 +125,26 @@ a {
 
 }
 
-#div-fixed-labels {
-    position: relative;
-    top: -9px;
-}
-
 #div-card-display {
   overflow-x: scroll;
+}
+
+#div-fixed-labels {
+    width: 270px;
+    max-width: 270px;
+    min-width: 270px;
+}
+
+#div-add-card {
+    width: 90px;
+    max-width: 90px;
+    min-width: 90px;
+}
+
+@media (max-width: 1210px) {
+    #div-add-card {
+        width: 90px;
+        max-width: 90px;
+        min-width: 90px;
+    }
 }

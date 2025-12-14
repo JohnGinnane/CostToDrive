@@ -25,7 +25,7 @@ var fuelTypes = { };
 async function init(db) {
     db.getFuelTypes().then((res) => {
         fuelTypes = res;
-        console.log(fuelTypes);
+        //console.log(fuelTypes);
     }).catch((err) => {
         console.log("Error fetching fuel types!");
         console.error(err);
@@ -70,11 +70,11 @@ function IDToName(ID) {
 }
 
 async function getFuelPrice(countryCode) {
-    console.log(countryCode);
+    //console.log(countryCode);
     if (!countryCode) { return; }
     var country = countryURLs[countryCode.trim().toUpperCase()];
 
-    console.log(`Fetching prices for ${country.Name}`)
+    //console.log(`Fetching prices for ${country.Name}`)
 
     // "1.23 EUR/L"
     const regexPrice = new RegExp("([0-9.]+) ([a-zA-Z]+)\/L");
@@ -182,6 +182,10 @@ async function getFuelPrice(countryCode) {
             };
 
             var i = 0; 
+
+            // console.log(headers);
+            // console.log(data);
+            // console.log(currencies);
 
             while (i < headers.length && i < data.length && i < currencies.length) {
                 var fuelName = headers[i]

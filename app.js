@@ -456,21 +456,51 @@ async function getFuelPrices(ws, containerID, countryCode) {
             } else {
                 // If not DB then scrape webpage
                 fuel.getFuelPrice(countryCode).then((newFuelPrices) => {
+                    if (!newFuelPrices) {
+                        reject("Unable to get fuel prices");
+                        return;
+                    }
+
+                    if (!newFuelPrices.prices) {
+                        reject("No prices found"); 
+                        return;
+                    }
+                    
+                    // if (Object.keys(newFuelPrices.prices).length <= 0) {
+                    //     reject("No prices found");
+                    //     return;
+                    // }
+
+                    // Make sure our fuel data is good enough
+                    // any invalid currencies are removed
+                    for (var fuelType in newFuelPrices.prices) {
+                        var fuelPrice = newFuelPrices.prices[fuelType];
+
+                        if (fuelPrice.currency == '?') {
+                            delete newFuelPrices.prices[fuelType];
+                        }
+                    }
+
                     // Once we get our data from webpage, let's
                     // 1. Log it in DB, and
                     // 2. Return it
                     db.insertNewFuelPrices(newFuelPrices, fuel.webpageSourceID()).then((result) => {
                         // We successfully logged new entries, now send this data to client
+                        db.getFuelPrices(countryCode).then((savedFuelPrices) => {
+                            if (!savedFuelPrices) {
+                                reject("Unable to retrieve saved fuel prices");
+                                return; 
+                            }
+
+                            ws.send(JSON.stringify({
+                                type: "fuelPrices",
+                                containerID: containerID,
+                                data: savedFuelPrices
+                            }));
+                            
+                            resolve(newFuelPrices);
+                        });
                     });
-
-                    ws.send(JSON.stringify({
-                        type: "fuelPrices",
-                        containerID: containerID,
-                        data: newFuelPrices
-                    }));
-
-                    resolve(newFuelPrices);
-                    return;
                 }).catch((err) => {
                     console.log("Unable to get fuel prices from webpage");
                     reject(err);
@@ -552,7 +582,7 @@ webSocket.on("connection", function connection(ws) {
 
                 getFuelPrices(ws, containerID, countryCode, fuelID).then((res) => {
                     // send these prices to the client
-                    console.log(res);
+                    //console.log(res);
                 });
 
                 break;

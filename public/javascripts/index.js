@@ -281,6 +281,8 @@ function findParameterValues(parentContainer) {
 function checkFixedLabels() {
     var totalWidth = 0;
 
+    return;
+
     $("#div-card-display").find("div.ctd-container").each(function(k, v) {
         totalWidth += $(v).width();
     });
@@ -698,6 +700,7 @@ webSocket.onmessage = (msg) => {
         case "fuelprices":
             // When we receive fuel data, we need to check what selected
             // fuel type, and currency, and then place value into field
+            console.log(resp.data); 
             updateFuelPrice(container, resp.data);
             break;
 

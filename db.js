@@ -233,6 +233,9 @@ SELECT [Source].[ID]          AS [SourceID],
        (
         ${sql}
        ) AS [NewPrices]`;
+
+    // console.log(sql);
+    // console.log(params);
     
     return new Promise((resolve, reject) => {
         conn.all(sql, params, (err, result) => {
@@ -252,15 +255,16 @@ async function getFuelPrices(countryCode) {
         prices:          { }
     };
 
-    var sql = `SELECT MAX([FPL].[Timestamp]) AS [LastUpdated],
+    var sql = `SELECT DATETIME(MAX([FPL].[Timestamp]) / 1000, 'unixepoch') AS [LastUpdated], 
                       [FPL].[FuelID]         AS [FuelID],
                       [FT].[Description]     AS [FuelName],
                       [FPL].[Currency]       AS [Currency],
                       AVG([FPL].[Value])     AS [Price]
                  FROM [FuelPriceLog] AS [FPL]
-                      LEFT OUTER JOIN [FuelTypes] AS [FT]
+                      INNER JOIN [FuelTypes] AS [FT]
                                    ON [FT].[ID] = [FPL].[FuelID]
                 WHERE [FPL].[CountryCode] = $CountryCode
+				  AND [FPL].[Currency] NOT IN ('', '?')
                       GROUP BY [FPL].[FuelID],
                                [FT].[Description],
                                [FPL].[Currency]

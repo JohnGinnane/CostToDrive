@@ -136,7 +136,7 @@ db.getCurrencyRates().then((res) => {
 
     fetchNewRates = true;
 
-    if (fetchNewRates) {
+    if (fetchNewRates && config.api_currency_key) {
         log("Fetching new exchange rates!");
 
         // We need to get the ID of the source we're using
@@ -155,41 +155,44 @@ db.getCurrencyRates().then((res) => {
                 // 3. Insert into the database
                 // This whole process really needs its own class...
                 resp.on("end", () => {
-                    //console.log(data);
+                    try {
+                        var newCurrencyData = JSON.parse(data);
+                        
+                        // This "data" is expected to look like
+                        // {
+                        //     meta: { last_updated_at: '2025-12-02T23:59:59Z' },
+                        //     data: {
+                        //         CAD: { code: 'CAD', value: 1.6244535552 },
+                        //         GBP: { code: 'GBP', value: 0.8796628277 },
+                        //         USD: { code: 'USD', value: 1.1627905365 }
+                        //     }
+                        // }
 
-                    var newCurrencyData = JSON.parse(data);
-                    
-                    // This "data" is expected to look like
-                    // {
-                    //     meta: { last_updated_at: '2025-12-02T23:59:59Z' },
-                    //     data: {
-                    //         CAD: { code: 'CAD', value: 1.6244535552 },
-                    //         GBP: { code: 'GBP', value: 0.8796628277 },
-                    //         USD: { code: 'USD', value: 1.1627905365 }
-                    //     }
-                    // }
+                        // Convert to our standard conversion object
+                        currencyConversion = {
+                            last_updated_at: newCurrencyData.meta.last_updated_at,
+                            prime_currency:   "EUR",
+                            // Insert our prime currency rate
+                            rates:           { EUR: 1.0 }
+                        };
 
-                    // Convert to our standard conversion object
-                    currencyConversion = {
-                        last_updated_at: newCurrencyData.meta.last_updated_at,
-                        prime_currency:   "EUR",
-                        // Insert our prime currency rate
-                        rates:           { EUR: 1.0 }
-                    };
+                        // Iterate over currencies and add to our rates
+                        Object.keys(newCurrencyData.data).forEach(function(currency) {
+                            currencyConversion.rates[currency.toUpperCase()] = newCurrencyData.data[currency].value;
+                        });
 
-                    // Iterate over currencies and add to our rates
-                    Object.keys(newCurrencyData.data).forEach(function(currency) {
-                        currencyConversion.rates[currency.toUpperCase()] = newCurrencyData.data[currency].value;
-                    });
+                        // console.log("Our conversion object:");
+                        // console.log(currencyConversion);
 
-                    // console.log("Our conversion object:");
-                    // console.log(currencyConversion);
-
-                    // Pass this conversion object to the DB to log
-                    db.insertNewCurrencyRates(currencyConversion, dbAPISource.ID).then().catch((err) => {
-                        console.log("Error inserting new rates:");
-                        console.error(err);
-                    });
+                        // Pass this conversion object to the DB to log
+                        db.insertNewCurrencyRates(currencyConversion, dbAPISource.ID).then().catch((err) => {
+                            console.log("Error inserting new rates:");
+                            console.error(err);
+                        });
+                    } catch (ex) {
+                        console.log("Error getting currency exchange rates:");
+                        console.error(ex);
+                    }
                 });
             });
         });
